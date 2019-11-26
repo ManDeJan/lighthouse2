@@ -97,8 +97,18 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 //  |  RenderCore::SetInstance                                                    |
 //  |  Set instance details.                                                LH2'19|
 //  +-----------------------------------------------------------------------------+
+// #include <iostream>
+// template <typename ...Args>
+// void print(Args &&...args) {
+//     (std::cout << ... << args) << '\n'; // aren't fold expressions cool?!
+// }
+ 
+
 void RenderCore::SetInstance( const int instanceIdx, const int meshIdx, const mat4& matrix )
 {
+	if (meshIdx < 0) return;
+	// auto &child = rasterizer.scene.root->child;
+	// print(child.size(), " ", instanceIdx, " ", meshIdx);
 	if (instanceIdx >= rasterizer.scene.root->child.size())
 	{
 		// Note: for first-time setup, meshes are expected to be passed in sequential order.
