@@ -109,6 +109,7 @@ void RenderCore::SetInstance( const int instanceIdx, const int meshIdx, const ma
 	if (meshIdx < 0) return;
 	// auto &child = rasterizer.scene.root->child;
 	// print(child.size(), " ", instanceIdx, " ", meshIdx);
+
 	if (instanceIdx >= rasterizer.scene.root->child.size())
 	{
 		// Note: for first-time setup, meshes are expected to be passed in sequential order.

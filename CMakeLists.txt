@@ -10,6 +10,8 @@ project(Lighthouse2)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}")
 set(CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/cmake" "${CMAKE_PREFIX_PATH}")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+
 if(MSVC)
 	# Consolidate all runtime libraries and executables to a single folder.
 	# This has the following advantages:
@@ -98,6 +100,7 @@ endif()
 # Include default RenderCores:
 add_render_core("lib/RenderCore_SoftRasterizer")
 add_render_core("lib/RenderCore_Minimal")
+add_render_core("lib/RenderCore_HardCore")
 
 message(STATUS "Found RenderCores: ${render_cores}")
 
