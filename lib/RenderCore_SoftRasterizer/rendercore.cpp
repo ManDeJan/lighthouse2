@@ -106,10 +106,16 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 
 void RenderCore::SetInstance( const int instanceIdx, const int meshIdx, const mat4& matrix )
 {
-	if (meshIdx < 0) return;
-	// auto &child = rasterizer.scene.root->child;
-	// print(child.size(), " ", instanceIdx, " ", meshIdx);
-
+	// A '-1' mesh denotes the end of the instance stream;
+	// adjust the instances vector if we have more.
+	if (meshIdx == -1)
+	{
+		if (rasterizer.scene.root->child.size() > instanceIdx) 
+			rasterizer.scene.root->child.resize( instanceIdx );
+		return;
+	}
+	// For the first frame, instances are added to the instances vector.
+	// For subsequent frames existing slots are overwritten / updated.
 	if (instanceIdx >= rasterizer.scene.root->child.size())
 	{
 		// Note: for first-time setup, meshes are expected to be passed in sequential order.
@@ -203,7 +209,7 @@ void RenderCore::Setting( const char* name, const float value )
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::Render( const ViewPyramid& view, const Convergence converge, const float brightness, const float contrast )
+void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	// render
 	mat4 transform;

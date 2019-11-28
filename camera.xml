@@ -1,10 +1,12 @@
 <camera>
-    <position x="-6.7055564" y="7.5417962" z="1.2986732"/>
-    <direction x="0.67729962" y="-0.5423792" z="-0.49708149"/>
-    <FOV>40</FOV>
-    <brightness>0</brightness>
-    <contrast>0</contrast>
-    <aperture>9.9999997e-05</aperture>
-    <focalDistance>5</focalDistance>
+    <position x="0.70178038" y="2.8458388" z="-10.629799"/>
+    <direction x="-0.151484" y="-0.57348835" z="-0.80508608"/>
+    <FOV>44.544998</FOV>
+    <brightness>0.018999999</brightness>
+    <contrast>0.0080000004</contrast>
+    <gamma>2.023</gamma>
+    <aperture>0.017000001</aperture>
+    <focalDistance>3.9751096</focalDistance>
     <clampValue>10</clampValue>
+    <tonemapper>3</tonemapper>
 </camera>
