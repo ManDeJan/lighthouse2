@@ -28,11 +28,19 @@
 #pragma comment(lib, "../platform/lib/release/platform.lib" )
 #endif
 
+#include <iostream>
+template <typename ...Args>
+void print(Args &&...args) {
+    (std::cout << ... << args) << '\n'; // aren't fold expressions cool?!
+}
+
 using namespace lighthouse2;
 
 #include "core_api_base.h"
 #include "core_api.h"
 #include "rendercore.h"
+
+#include "ray.h"
 
 using namespace lh2core;
 

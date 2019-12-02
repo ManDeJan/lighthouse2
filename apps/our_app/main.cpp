@@ -56,6 +56,12 @@ void PrepareScene() {
     int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
     renderer->AddInstance( floorQuad );
     animPaused = true;
+    // // mushrooms
+	// materialFile = string( "data/mushrooms/mush_materials.xml" );
+	// renderer->AddScene( "scene.gltf", "data/mushrooms/", mat4::Scale( 2 ) * mat4::Translate( 0, 0, 0 ) );
+	// int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
+	// renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
+	// animPaused = true;
 #else
     // classic scene
     materialFile = string("data/pica/pica_materials.xml");
@@ -63,6 +69,7 @@ void PrepareScene() {
     int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
     renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
 #endif
+
 #if 1
     // overhead light, use regular PT
     int lightMat = renderer->AddMaterial(make_float3(100, 100, 80));
@@ -153,10 +160,10 @@ int main() {
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_B" );      // OPTIX PRIME, best for pre-RTX CUDA devices
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_PrimeRef" );          // REFERENCE, for image validation
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_SoftRasterizer" );    // RASTERIZER, your only option if not on NVidia
-    // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Minimal" );           // MINIMAL example, to get you started on your own core
+    renderer = RenderAPI::CreateRenderAPI( "RenderCore_Minimal" );           // MINIMAL example, to get you started on your own core
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Vulkan_RT" );         // Meir's Vulkan / RTX core
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_BDPT" );   // Peter's OptixPrime / BDPT core
-    renderer = RenderAPI::CreateRenderAPI("RenderCore_HardCore"); // Our own custom core
+    // renderer = RenderAPI::CreateRenderAPI("RenderCore_HardCore"); // Our own custom core
 
     renderer->DeserializeCamera("camera.xml");
     // initialize scene
