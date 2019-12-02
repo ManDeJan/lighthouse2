@@ -3,5 +3,6 @@
   <PropertyGroup>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <ShowAllFiles>true</ShowAllFiles>
   </PropertyGroup>
 </Project>
