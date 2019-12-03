@@ -78,7 +78,7 @@ void PrepareScene() {
 #if 1
     // overhead light, use regular PT
     int lightMat = renderer->AddMaterial(make_float3(100, 100, 80));
-    // int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
+    int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
 #else
     // difficult light; use BDPT
     int lightMat = renderer->AddMaterial(make_float3(500, 500, 400));
