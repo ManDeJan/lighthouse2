@@ -15,33 +15,35 @@
 
 #pragma once
 
-namespace lh2core
-{
+namespace lh2core {
 
 //  +-----------------------------------------------------------------------------+
 //  |  Mesh                                                                       |
 //  |  Minimalistic mesh storage.                                           LH2'19|
 //  +-----------------------------------------------------------------------------+
-class Mesh
-{
+class Mesh {
 public:
-	float4* vertices = 0;							// vertex data received via SetGeometry
-	int vcount = 0;									// vertex count
-	CoreTri* triangles = 0;							// 'fat' triangle data
+    float4 *vertices = 0;   // vertex data received via SetGeometry
+    int vcount = 0;         // vertex count
+    CoreTri *triangles = 0; // 'fat' triangle data
 };
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore                                                                 |
 //  |  Encapsulates device code.                                            LH2'19|
 //  +-----------------------------------------------------------------------------+
-class RenderCore
-{
+class RenderCore {
 public:
-	// methods
-	void Init();
-	void SetTarget( GLTexture* target );
-	void SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangles, const uint* alphaFlags = 0 );
-	void Render( const ViewPyramid& view, const Convergence converge );
+    // methods
+    void Init();
+    void SetTarget(GLTexture *target);
+    void SetGeometry(const int meshIdx,
+                     const float4 *vertexData,
+                     const int vertexCount,
+                     const int triangleCount,
+                     const CoreTri *triangles,
+                     const uint *alphaFlags = 0);
+    void Render(const ViewPyramid &view, const Convergence converge);
     void SetLights(const CoreLightTri *areaLights,
                    const int areaLightCount,
                    const CorePointLight *pointLights,
@@ -50,17 +52,17 @@ public:
                    const int spotLightCount,
                    const CoreDirectionalLight *directionalLights,
                    const int directionalLightCount);
-	void Shutdown();
-	// internal methods
+    void Shutdown();
+    // internal methods
 private:
-	// data members
-	Bitmap* screen = 0;								// temporary storage of RenderCore output; will be copied to render target
-	int targetTextureID = 0;						// ID of the target OpenGL texture
-	vector<Mesh> meshes;							// mesh data storage
+    // data members
+    Bitmap *screen = 0;      // temporary storage of RenderCore output; will be copied to render target
+    int targetTextureID = 0; // ID of the target OpenGL texture
+    vector<Mesh> meshes;     // mesh data storage
     vector<CorePointLight> pointLights;
 
 public:
-	CoreStats coreStats;							// rendering statistics
+    CoreStats coreStats; // rendering statistics
 };
 
 } // namespace lh2core

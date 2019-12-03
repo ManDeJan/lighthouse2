@@ -144,6 +144,7 @@ void RenderCore::SetLights(const CoreLightTri *areaLights,
                            const int spotLightCount,
                            const CoreDirectionalLight *directionalLights,
                            const int directionalLightCount) {
+    // print("HELP IK WORDT GEZET");
     this->pointLights = vector(pointLights, pointLights + pointLightCount);
     // not supported yet
 }

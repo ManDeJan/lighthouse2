@@ -195,7 +195,4 @@ apps/imguiapp/x64/Debug/imguiapp.tlog/imguiapp.write.1u.tlog
 .vs/ProjectSettings.json
 .vs/LightHouse2/v15/ipch/AutoPCH/b9a6d2cbb6dfd33b/RAY.ipch
 lib/RenderCore_HardCore/x64/Debug/ray.obj
-run/
-lib/
-apps/
 .vs/
