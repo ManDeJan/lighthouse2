@@ -11,18 +11,18 @@ optional<float> intersect(const Ray &ray, const CoreTri &tri) {
     a = dot(edge1, h);
 
     // if ray is parallel, quit
-    if (a > -EPSILON && a < EPSILON) return false;
+    if (a > -EPSILON && a < EPSILON) return nullopt;
 
     f = 1.0 / a;
     s = ray.a - tri.vertex0;
     u = f * dot(s, h);
 
-    if (u < 0.0 || u > 1.0) return false;
+    if (u < 0.0 || u > 1.0) return nullopt;
 
     q = cross(s, edge1);
     v = f * dot(ray.b, q);
 
-    if (v < 0.0 || u + v > 1.0) return false;
+    if (v < 0.0 || u + v > 1.0) return nullopt;
 
     // compute t
     float tt = f * dot(edge2, q);

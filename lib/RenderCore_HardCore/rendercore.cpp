@@ -88,21 +88,24 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
             float3 d = p - view.pos;                  // Ray direction
             Ray ray = Ray(view.pos, d);
             float t_min = numeric_limits<float>::max();
-            for (Mesh &mesh : meshes)
+            for (Mesh &mesh : meshes) {
                 for (int i = 0; i < mesh.vcount / 3; i++) {
                     auto t = intersect(ray, mesh.triangles[i]);
-                    if (t != 0 && *t < t_min) {
+                    if (t && *t < t_min) {
                         t_min = *t;
                         // print(t_min);
                         // if (t != 0) print(t_min);
-                        abs_min = abs_min < *t ? abs_min : *t;
-                        abs_max = abs_max > *t ? abs_max : *t;
-                        uint color = map(*t, abs_min, abs_max, 200.0f, 100.0f);
+                        // abs_min = abs_min < t_min ? abs_min : t_min;
+                        // abs_max = abs_max > t_min ? abs_max : t_min;
                         // print(abs_min, " ", abs_max);
-                        color = color << 16 | color << 8 | color;
-                        screen->Plot(x, y, color);
                     }
                 }
+            }
+            if (t_min != numeric_limits<float>::max()) {
+                uint color = map(t_min, 5.0f, 15.0f, 255.0f, 0.0f);
+                color = color << 16 | color << 8;// | color;
+                screen->Plot(x, y, color);
+            }
             // print(">>> pixel done... (", x, ")\n");
         }
         // print(">>> horizontal line done... (", y, ")\n");
