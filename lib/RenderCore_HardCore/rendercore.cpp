@@ -82,11 +82,12 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
 
     for (int y = 0; y < ny; y++) {
         for (int x = 0; x < nx; x++) {
-            float3 sx = x * dx * (view.p2 - view.p1); // Screen x
-            float3 sy = y * dy * (view.p3 - view.p1); // Screen y
-            float3 p = view.p1 + sx + sy;             // Point on screen
-            float3 d = p - view.pos;                  // Ray direction
-            Ray ray = Ray(view.pos, d);
+            float3 sx = x * dx * (view.p2 - view.p1); // screen widt
+            float3 sy = y * dy * (view.p3 - view.p1); // screen height
+            float3 point = view.p1 + sx + sy;         // point on the screen
+            float3 dir = normalize(point - view.pos); // direction
+            Ray ray = Ray(view.pos, dir);
+            
             float t_min = numeric_limits<float>::max();
             for (Mesh &mesh : meshes) {
                 for (int i = 0; i < mesh.vcount / 3; i++) {
@@ -102,7 +103,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                 }
             }
             if (t_min != numeric_limits<float>::max()) {
-                uint color = map(t_min, 5.0f, 15.0f, 255.0f, 0.0f);
+                uint color = map(t_min, 0.0f, 10.0f, 255.0f, 0.0f);
                 color = color << 16 | color << 8;// | color;
                 screen->Plot(x, y, color);
             }

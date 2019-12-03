@@ -6,22 +6,22 @@ namespace lh2core {
 
 class Ray {
 public:
-    float3 a;
-    float3 b;
+    float3 org;
+    float3 dir;
 
     Ray() = default;
-    Ray(const float3 &a, const float3 &b) : a(a), b(b) {}
+    Ray(const float3 &org, const float3 &dir) : org(org), dir(dir) {}
 
     float3 origin() const {
-        return a;
+        return org;
     }
 
     float3 direction() const {
-        return b;
+        return dir;
     }
 
     float3 point_at_parameter(float t) const {
-        return a + t * b;
+        return org + t * dir;
     }
 };
 
