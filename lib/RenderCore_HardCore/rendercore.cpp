@@ -76,9 +76,9 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
 
     float dx = 1.0f / (nx - 1);
     float dy = 1.0f / (ny - 1);
-    print(">>> Start");
+    // print(">>> Start");
 
-    float abs_min = 0, abs_max = 100;
+    float abs_min = numeric_limits<float>::max(), abs_max = numeric_limits<float>::min();
 
     for (int y = 0; y < ny; y++) {
         for (int x = 0; x < nx; x++) {
@@ -91,20 +91,17 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
             for (Mesh &mesh : meshes)
                 for (int i = 0; i < mesh.vcount / 3; i++) {
                     auto t = intersect(ray, mesh.triangles[i]);
-                    if (t && *t < t_min) {
+                    if (t != 0 && *t < t_min) {
                         t_min = *t;
+                        // print(t_min);
                         // if (t != 0) print(t_min);
                         abs_min = abs_min < *t ? abs_min : *t;
                         abs_max = abs_max > *t ? abs_max : *t;
-                        // color = raytracer.scene.matList[mesh.triangles[i].material]->diffuse;
-                        uint color = map(*t, abs_min, abs_max, 0.0f, 255.0f);
+                        uint color = map(*t, abs_min, abs_max, 200.0f, 100.0f);
+                        // print(abs_min, " ", abs_max);
+                        color = color << 16 | color << 8 | color;
                         screen->Plot(x, y, color);
                     }
-                    // for (int i = 0; i < mesh.vcount / 3; i++) {
-                    //     float closest;
-                    //     if (auto t = intersect(ray, mesh.triangles[i])) { screen->Plot(x, y, int(*t)); }
-                    //     else {screen->Plot(x, y, 0xff0000); print("nonhit");};
-                    // }
                 }
             // print(">>> pixel done... (", x, ")\n");
         }
