@@ -42,6 +42,14 @@ public:
 	void SetTarget( GLTexture* target );
 	void SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangles, const uint* alphaFlags = 0 );
 	void Render( const ViewPyramid& view, const Convergence converge );
+    void SetLights(const CoreLightTri *areaLights,
+                   const int areaLightCount,
+                   const CorePointLight *pointLights,
+                   const int pointLightCount,
+                   const CoreSpotLight *spotLights,
+                   const int spotLightCount,
+                   const CoreDirectionalLight *directionalLights,
+                   const int directionalLightCount);
 	void Shutdown();
 	// internal methods
 private:
@@ -49,6 +57,8 @@ private:
 	Bitmap* screen = 0;								// temporary storage of RenderCore output; will be copied to render target
 	int targetTextureID = 0;						// ID of the target OpenGL texture
 	vector<Mesh> meshes;							// mesh data storage
+    vector<CorePointLight> pointLights;
+
 public:
 	CoreStats coreStats;							// rendering statistics
 };

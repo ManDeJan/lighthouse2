@@ -79,8 +79,8 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
     // print(">>> Start");
 
     float abs_min = numeric_limits<float>::max(), abs_max = numeric_limits<float>::min();
-
-    for (int y = 0; y < ny; y++) {
+    
+	for (int y = 0; y < ny; y++) {
         for (int x = 0; x < nx; x++) {
             float3 sx = x * dx * (view.p2 - view.p1); // screen widt
             float3 sy = y * dy * (view.p3 - view.p1); // screen height
@@ -112,6 +112,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         // print(">>> horizontal line done... (", y, ")\n");
     }
 
+
     // render minimal
     // screen->Clear();
     // for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
@@ -133,6 +134,18 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                  GL_RGBA,
                  GL_UNSIGNED_BYTE,
                  screen->pixels);
+}
+
+void RenderCore::SetLights(const CoreLightTri *areaLights,
+                           const int areaLightCount,
+                           const CorePointLight *pointLights,
+                           const int pointLightCount,
+                           const CoreSpotLight *spotLights,
+                           const int spotLightCount,
+                           const CoreDirectionalLight *directionalLights,
+                           const int directionalLightCount) {
+    this->pointLights = vector(pointLights, pointLights + pointLightCount);
+    // not supported yet
 }
 
 //  +-----------------------------------------------------------------------------+
