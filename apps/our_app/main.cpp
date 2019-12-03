@@ -21,14 +21,8 @@
 static RenderAPI *renderer = 0;
 static GLTexture *renderTarget = 0;
 static Shader *shader = 0;
-static uint scrwidth  = 0,
-            scrheight = 0,
-            scrspp    = 1;
-static bool camMoved   = false,
-            spaceDown  = false,
-            hasFocus   = true,
-            running    = true,
-            animPaused = false;
+static uint scrwidth = 0, scrheight = 0, scrspp = 1;
+static bool camMoved = false, spaceDown = false, hasFocus = true, running = true, animPaused = false;
 static std::bitset<1024> keystates;
 static std::bitset<8> mbstates;
 static string materialFile;
@@ -69,7 +63,7 @@ void PrepareScene() {
     // int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
     // renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
 #endif
-        // classic scene
+    // classic scene
     // materialFile = string("data/pica/pica_materials.xml");
     renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(0, -10.2f, 0));
     int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
@@ -78,7 +72,9 @@ void PrepareScene() {
 #if 1
     // overhead light, use regular PT
     int lightMat = renderer->AddMaterial(make_float3(100, 100, 80));
-    int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
+    renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
+    renderer->AddPointLight(make_float3(1, 0, 0), make_float3(0, 30.0f, 0), true);
+	
 #else
     // difficult light; use BDPT
     int lightMat = renderer->AddMaterial(make_float3(500, 500, 400));
@@ -88,12 +84,12 @@ void PrepareScene() {
                                       1.9f,
                                       lightMat);
 #endif
-    // int lightInst = renderer->AddInstance(lightQuad);
-    // optional animated models
-    // renderer->AddScene( "CesiumMan.glb", "data/", mat4::Translate( 0, -2, -9 ) );
-    // renderer->AddScene( "project_polly.glb", "data/", mat4::Translate( 4.5f, -5.45f, -5.2f ) * mat4::Scale( 2 ) );
-    // load changed materials
-    renderer->DeserializeMaterials(materialFile.c_str());
+        // int lightInst = renderer->AddInstance(lightQuad);
+        // optional animated models
+        // renderer->AddScene( "CesiumMan.glb", "data/", mat4::Translate( 0, -2, -9 ) );
+        // renderer->AddScene( "project_polly.glb", "data/", mat4::Translate( 4.5f, -5.45f, -5.2f ) * mat4::Scale( 2 ) );
+        // load changed materials
+        renderer->DeserializeMaterials(materialFile.c_str());
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -105,17 +101,17 @@ bool HandleInput(float frameTime) {
     float tspd = (keystates[GLFW_KEY_LEFT_SHIFT] ? 15.0f : 5.0f) * frameTime, rspd = 2.5f * frameTime;
     bool changed = false;
     Camera *camera = renderer->GetCamera();
-    if (keystates[GLFW_KEY_A])     changed = true, camera->TranslateRelative(make_float3(-tspd,     0,     0));
-    if (keystates[GLFW_KEY_D])     changed = true, camera->TranslateRelative(make_float3( tspd,     0,     0));
-    if (keystates[GLFW_KEY_W])     changed = true, camera->TranslateRelative(make_float3(    0,     0,  tspd));
-    if (keystates[GLFW_KEY_S])     changed = true, camera->TranslateRelative(make_float3(    0,     0, -tspd));
-    if (keystates[GLFW_KEY_R])     changed = true, camera->TranslateRelative(make_float3(    0,  tspd,     0));
-    if (keystates[GLFW_KEY_F])     changed = true, camera->TranslateRelative(make_float3(    0, -tspd,     0));
-    if (keystates[GLFW_KEY_B])     changed = true; // force restart
-    if (keystates[GLFW_KEY_UP])    changed = true, camera->TranslateTarget(make_float3(    0, -rspd, 0));
-    if (keystates[GLFW_KEY_DOWN])  changed = true, camera->TranslateTarget(make_float3(    0,  rspd, 0));
-    if (keystates[GLFW_KEY_LEFT])  changed = true, camera->TranslateTarget(make_float3(-rspd,     0, 0));
-    if (keystates[GLFW_KEY_RIGHT]) changed = true, camera->TranslateTarget(make_float3( rspd,     0, 0));
+    if (keystates[GLFW_KEY_A]) changed = true, camera->TranslateRelative(make_float3(-tspd, 0, 0));
+    if (keystates[GLFW_KEY_D]) changed = true, camera->TranslateRelative(make_float3(tspd, 0, 0));
+    if (keystates[GLFW_KEY_W]) changed = true, camera->TranslateRelative(make_float3(0, 0, tspd));
+    if (keystates[GLFW_KEY_S]) changed = true, camera->TranslateRelative(make_float3(0, 0, -tspd));
+    if (keystates[GLFW_KEY_R]) changed = true, camera->TranslateRelative(make_float3(0, tspd, 0));
+    if (keystates[GLFW_KEY_F]) changed = true, camera->TranslateRelative(make_float3(0, -tspd, 0));
+    if (keystates[GLFW_KEY_B]) changed = true; // force restart
+    if (keystates[GLFW_KEY_UP]) changed = true, camera->TranslateTarget(make_float3(0, -rspd, 0));
+    if (keystates[GLFW_KEY_DOWN]) changed = true, camera->TranslateTarget(make_float3(0, rspd, 0));
+    if (keystates[GLFW_KEY_LEFT]) changed = true, camera->TranslateTarget(make_float3(-rspd, 0, 0));
+    if (keystates[GLFW_KEY_RIGHT]) changed = true, camera->TranslateTarget(make_float3(rspd, 0, 0));
     if (!keystates[GLFW_KEY_SPACE]) spaceDown = false;
     else {
         if (!spaceDown) animPaused = !animPaused, changed = true;
@@ -164,11 +160,11 @@ int main() {
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Optix7" );            // OPTIX7 core, best for RTX devices
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_B" );      // OPTIX PRIME, best for pre-RTX CUDA devices
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_PrimeRef" );          // REFERENCE, for image validation
-   // renderer = RenderAPI::CreateRenderAPI( "RenderCore_SoftRasterizer" );    // RASTERIZER, your only option if not on NVidia
+    // renderer = RenderAPI::CreateRenderAPI( "RenderCore_SoftRasterizer" );    // RASTERIZER, your only option if not on NVidia
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Minimal" );           // MINIMAL example, to get you started on your own core
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Vulkan_RT" );         // Meir's Vulkan / RTX core
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_BDPT" );   // Peter's OptixPrime / BDPT core
-     renderer = RenderAPI::CreateRenderAPI("RenderCore_HardCore"); // Our own custom core
+    renderer = RenderAPI::CreateRenderAPI("RenderCore_HardCore"); // Our own custom core
 
     renderer->DeserializeCamera("camera.xml");
     // initialize scene
