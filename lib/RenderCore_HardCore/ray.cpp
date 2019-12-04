@@ -33,6 +33,7 @@ optional<float> intersect(const Ray &ray, const CoreTri &tri) {
 }
 
 //float3 calculateColor(const Ray &ray, const CoreTri &tri, float t, vector<CoreMaterial> &materials, uint recursion_depth) {}
+/*
 float3 calculateColor(const Ray &ray,
                       float t,
                       vector<CoreMaterial> &materials,
@@ -46,6 +47,6 @@ float3 calculateColor(const Ray &ray,
     // hier kleuren gaan doen
 
     return color;
-}
+}*/
 
 } // namespace lh2core

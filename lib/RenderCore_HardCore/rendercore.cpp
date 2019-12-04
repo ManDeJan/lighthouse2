@@ -147,6 +147,31 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                  screen->pixels);
 }
 
+float3 RenderCore::calculateColor(const Ray &ray,
+                                  float t,
+								  CoreTri &tri,	
+                                  vector<CoreMaterial> &materials,
+                                  uint recursion_depth) { // default 3 recursions
+
+    float3 color = make_float3(0, 200, 0);
+    
+
+    if (t == numeric_limits<float>::max()) return make_float3(0, 0.5, 1); // I guess this is a sky-ish color?
+
+	if (!recursion_depth) {
+        CoreMaterial material = materials[tri.material];
+        float specularity = material.specular();
+        float diffuse = 1.0f - specularity;
+
+		float r = material.diffuse_r, g = material.diffuse_g, b = material.diffuse_b;
+        color = diffuse * make_float3(r,g,b) * directIllumination(ray.dir * t + ray.org, cross(tri.vertex0, tri.vertex1));
+		return color;
+	}
+    // hier kleuren gaan doen
+
+    return color;
+}
+
 float3 RenderCore::directIllumination(float3 &org, float3 &norm) {
     for (CorePointLight pl : this->pointLights) {
         float3 dir = normalize(pl.position - org);
