@@ -113,3 +113,16 @@ lib/RenderCore_HardCore/x64/Debug/ray.obj
 .vs/
 lib/RenderSystem/lib/Debug/
 workspace.code-workspace
+/x64/
+lib/RenderCore_Minimal/x64/
+lib/platform/x64/Release/system.obj
+lib/RenderCore_HardCore/x64/Release/rendercore_hardcore.log
+lib/RenderCore_SoftRasterizer/x64/Release/RenderCo.07247B19.tlog/CL.read.1.tlog
+lib/RenderCore_SoftRasterizer/x64/
+lib/RenderCore_HardCore/x64/
+lib/RenderCore_Vulkan_RT/x64/
+apps/our_app/x64/
+lib/RenderSystem/x64/
+lib/platform/x64/
+lib/platform/lib/Release/platform.lib
+lib/RenderSystem/lib/Release/
