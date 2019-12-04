@@ -154,23 +154,24 @@ float3 RenderCore::calculateColor(const Ray &ray,
     float3 color = make_float3(0, 200, 0);
     
 
-    if (t == numeric_limits<float>::max()) return make_float3(0, 0.5, 1); // I guess this is a sky-ish color?
 
-	if (!recursion_depth) {
+	if (t == numeric_limits<float>::max()) return make_float3(0, 0.5, 1); // I guess this is a sky-ish color?
+	
+		if (recursion_depth > 0) {
         CoreMaterial material = materials[tri.material];
         float specularity = material.specular();
         float diffuse = 1.0f - specularity;
 
-		float3 triNormal = cross(tri.vertex0, tri.vertex1);
+        float3 triNormal = cross(tri.vertex0, tri.vertex1);
         float3 intersect = ray.dir * t + ray.org;
 
-		float r = material.diffuse_r, g = material.diffuse_g, b = material.diffuse_b;
-        color = diffuse * make_float3(r,g,b) * directIllumination(intersect, triNormal);
+        float r = material.diffuse_r, g = material.diffuse_g, b = material.diffuse_b;
+        color = diffuse * make_float3(r, g, b) * directIllumination(intersect, triNormal);
 
-		color += specularity *
+        color += specularity *
                  calculateColor(Ray(intersect, normalize(reflect(ray.dir, triNormal))), t, tri, recursion_depth - 1);
-		return color;
-	}
+        return color;
+    }
     // hier kleuren gaan doen
 
     return color;
