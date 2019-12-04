@@ -74,7 +74,7 @@ void PrepareScene() {
     int lightMat = renderer->AddMaterial(make_float3(100, 100, 80));
     int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
     // renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
-    renderer->AddPointLight(make_float3(1, 0, 0), make_float3(0, 30.0f, 0), true);
+    renderer->AddPointLight(make_float3(0, -1.2, 0), make_float3(100, 100, 100), true);
 	
 #else
     // difficult light; use BDPT

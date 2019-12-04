@@ -76,11 +76,11 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
 
     float dx = 1.0f / (nx - 1);
     float dy = 1.0f / (ny - 1);
-    // print(">>> Start");
+    //print(">>> Start");
 
     float abs_min = numeric_limits<float>::max(), abs_max = numeric_limits<float>::min();
-    
-	for (int y = 0; y < ny; y++) {
+
+    for (int y = 0; y < ny; y++) {
         for (int x = 0; x < nx; x++) {
             float3 sx = x * dx * (view.p2 - view.p1); // screen width
             float3 sy = y * dy * (view.p3 - view.p1); // screen height
@@ -88,23 +88,23 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
             float3 dir = normalize(point - view.pos); // direction
             Ray ray = Ray(view.pos, dir);
             CoreTri *tri;
-            
+
             float t_min = numeric_limits<float>::max();
             for (Mesh &mesh : meshes) {
                 for (int i = 0; i < mesh.vcount / 3; i++) {
                     auto t = intersect(ray, mesh.triangles[i]);
                     if (t && *t < t_min) {
                         t_min = *t;
-                        tri = &mesh.triangles[i]; 
+                        tri = &mesh.triangles[i];
                     }
                 }
             }
-            
-            float3 color = calculateColor(ray, *tri, t_min, materials);
+            float3 color = calculateColor(ray, *tri, t_min, materials) * directIllumination(ray.dir * t_min + ray.org);
             uint color_rgb = ((uint)(clamp(color.z * 255.0f, 0.0f, 255.0f)) << 16) +
-                             ((uint)(clamp(color.y * 255.0f, 0.0f, 255.0f)) <<  8) +
-                              (uint)(clamp(color.x * 255.0f, 0.0f, 255.0f));
+                             ((uint)(clamp(color.y * 255.0f, 0.0f, 255.0f)) << 8) +
+                             (uint)(clamp(color.x * 255.0f, 0.0f, 255.0f));
             screen->Plot(x, y, color_rgb);
+
             // Depth map color function
             // if (t_min != numeric_limits<float>::max()) {
             //     uint color = map(t_min, 0.0f, 14.0f, 255.0f, 0.0f);
@@ -114,6 +114,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         }
     }
 
+ 
 
     // render minimal
     // screen->Clear();
@@ -138,6 +139,24 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                  screen->pixels);
 }
 
+float3 RenderCore::directIllumination(float3 &org) {
+    for (CorePointLight pl : this->pointLights) {
+        
+		float3 dir = pl.position - org;
+       
+        Ray shadowRay = Ray(org, dir);
+
+		for (Mesh &mesh : meshes) {
+            for (int i = 0; i < mesh.vcount / 3; i++) { 
+				if (intersect(shadowRay, mesh.triangles[i]))
+					return make_float3(0.0f, 0.0f, 0.0f);
+			}
+		}
+        return make_float3(1.0f, 1.0f, 1.0f);
+
+	}
+}
+
 void RenderCore::SetLights(const CoreLightTri *areaLights,
                            const int areaLightCount,
                            const CorePointLight *pointLights,
@@ -148,7 +167,6 @@ void RenderCore::SetLights(const CoreLightTri *areaLights,
                            const int directionalLightCount) {
     // print("HELP IK WORDT GEZET");
     this->pointLights = vector(pointLights, pointLights + pointLightCount);
-    // not supported yet
 }
 
 void RenderCore::SetMaterials(CoreMaterial *mat, const CoreMaterialEx *matEx, const int materialCount) {
