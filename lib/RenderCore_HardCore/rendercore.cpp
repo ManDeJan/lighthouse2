@@ -14,6 +14,7 @@
 */
 
 #include "core_settings.h"
+#include "ray.h"
 
 using namespace lh2core;
 
@@ -167,7 +168,7 @@ float3 RenderCore::calculateColor(const Ray &ray,
         color = diffuse * make_float3(r,g,b) * directIllumination(intersect, triNormal);
 
 		color += specularity *
-                 calculateColor(Ray(intersect, reflect(ray.dir, triNormal)), t, tri, materials, recursion_depth - 1);
+                 calculateColor(Ray(intersect, normalize(reflect(ray.dir, triNormal))), t, tri, recursion_depth - 1);
 		return color;
 	}
     // hier kleuren gaan doen
@@ -175,9 +176,9 @@ float3 RenderCore::calculateColor(const Ray &ray,
     return color;
 }
 
-float3 reflect(float3 in, float3 norm) {
-    return normalize(in - 2 * dot(in, norm) * norm);
-}
+// float3 reflect(float3 in, float3 norm) {
+//     return normalize(in - 2 * dot(in, norm) * norm);
+// }
 
 float3 RenderCore::directIllumination(float3 &org, float3 &norm) {
     for (CorePointLight pl : this->pointLights) {

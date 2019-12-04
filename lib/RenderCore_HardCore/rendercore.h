@@ -17,6 +17,8 @@
 
 namespace lh2core {
 
+class Ray; // forward declare Ray
+
 //  +-----------------------------------------------------------------------------+
 //  |  Mesh                                                                       |
 //  |  Minimalistic mesh storage.                                           LH2'19|
