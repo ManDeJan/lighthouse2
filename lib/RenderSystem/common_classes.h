@@ -58,14 +58,10 @@ class CoreTri
 public:
 #ifndef __CUDACC__
 	// on the host, instantiated classes should be initialized
-	CoreTri() { memset( this, 0, sizeof( CoreTri ) ); }
+	CoreTri() { memset( this, 0, sizeof( CoreTri ) ); ltriIdx = -1; }
 #endif
 	float u0, u1, u2;		// 12
-#ifndef __CUDACC__
-	int ltriIdx = -1;
-#else
 	int ltriIdx;			// 4, set only for emissive triangles, used for MIS
-#endif
 	float v0, v1, v2;		// 12
 	uint material;			// 4
 	float3 vN0;				// 12
@@ -201,6 +197,21 @@ struct CoreMaterial
 	// TODO: to match CoreMaterial4
 	/* read if bit 17 set */ short m0mapwidth, m0mapheight; half m0uscale, m0vscale, m0uoffs, m0voffs; uint m0mapaddr;
 	/* read if bit 18 set */ short m1mapwidth, m1mapheight; half m1uscale, m1vscale, m1uoffs, m1voffs; uint m1mapaddr;
+#endif
+#ifndef __CLORCUDA__
+	#define CHAR2FLT(a,s) (((float)(((a)>>s)&255))*(1.0f/255.0f))
+	float metallic() { return CHAR2FLT( parameters.x, 0 ); }
+	float subsurface() { return CHAR2FLT( parameters.x, 8 ); }
+	float specular() { return CHAR2FLT( parameters.x, 16 ); }
+	float roughness() { return (max( 0.001f, CHAR2FLT( parameters.x, 24 ) )); }
+	float spectint() { return CHAR2FLT( parameters.y, 0 ); }
+	float anisotropic() { return CHAR2FLT( parameters.y, 8 ); }
+	float sheen() { return CHAR2FLT( parameters.y, 16 ); }
+	float sheentint() { return CHAR2FLT( parameters.y, 24 ); }
+	float clearcoat() { return CHAR2FLT( parameters.z, 0 ); }
+	float clearcoatgloss() { return CHAR2FLT( parameters.z, 8 ); }
+	float transmission() { return CHAR2FLT( parameters.z, 16 ); }
+	float eta() { return *(uint*)&parameters.w; }
 #endif
 };
 // texture layers in HostMaterial and CoreMaterialEx
@@ -388,6 +399,7 @@ struct ViewPyramid
 	float spreadAngle;
 	float imagePlane;
 	float focalDistance;
+	float distortion;
 #else
 	float3 pos = make_float3( 0 );
 	float3 p1 = make_float3( -1, -1, -1 );
@@ -397,6 +409,7 @@ struct ViewPyramid
 	float spreadAngle = 0.01f; // spread angle of center pixel
 	float imagePlane = 0.01f;
 	float focalDistance = 0.01f;
+	float distortion = 0.05f; // subtle barrel distortion
 #endif
 };
 

@@ -41,10 +41,10 @@ static CoreStats coreStats;
 void PrepareScene()
 {
 	// initialize scene
-#if 1
+#if 0
 	// mushrooms
-	materialFile = string( "data/mushrooms/mush_materials.xml" );
-	renderer->AddScene( "scene.gltf", "data/mushrooms/", mat4::Scale( 2 ) * mat4::Translate( 0, 0, 0 ) );
+	materialFile = string( "data/woodville/wood_materials.xml" );
+	renderer->AddScene( "PUP_Woodville.gltf", "data/woodville/", mat4::Scale( 2 ) * mat4::Translate( 0, 0, 0 ) );
 	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
 	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
 	animPaused = true;
@@ -213,6 +213,7 @@ int main()
 		ImGui::Text( "viewdir:  %5.2f, %5.2f, %5.2f", camDir.x, camDir.y, camDir.z );
 		ImGui::SliderFloat( "FOV", &renderer->GetCamera()->FOV, 10, 90 );
 		ImGui::SliderFloat( "aperture", &renderer->GetCamera()->aperture, 0, 0.025f );
+		ImGui::SliderFloat( "distortion", &renderer->GetCamera()->distortion, 0, 0.5f );
 		ImGui::Combo( "tonemap", &renderer->GetCamera()->tonemapper, "clamp\0reinhard\0reinhard ext\0reinhard lum\0reinhard jodie\0uncharted2\0\0" );
 		ImGui::SliderFloat( "brightness", &renderer->GetCamera()->brightness, 0, 0.5f );
 		ImGui::SliderFloat( "contrast", &renderer->GetCamera()->contrast, 0, 0.5f );
