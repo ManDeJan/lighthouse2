@@ -38,7 +38,7 @@ float3 calculateColor(const Ray &ray,
                       vector<CoreMaterial> &materials,
                       uint recursion_depth) { // default 3 recursions
 
-    float3 color = make_float3(0, 0, 0);
+    float3 color = make_float3(0, 200, 0);
     if (!recursion_depth) return color;
 
     if (t == numeric_limits<float>::max()) return make_float3(0, 0.5, 1); // I guess this is a sky-ish color?

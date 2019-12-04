@@ -100,6 +100,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                 }
             }
             float3 color = calculateColor(ray, *tri, t_min, materials) * directIllumination(ray.dir * t_min + ray.org);
+            //color = directIllumination(ray.dir * t_min + ray.org);
             uint color_rgb = ((uint)(clamp(color.z * 255.0f, 0.0f, 255.0f)) << 16) +
                              ((uint)(clamp(color.y * 255.0f, 0.0f, 255.0f)) << 8) +
                              (uint)(clamp(color.x * 255.0f, 0.0f, 255.0f));
@@ -142,8 +143,8 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
 float3 RenderCore::directIllumination(float3 &org) {
     for (CorePointLight pl : this->pointLights) {
         
-		float3 dir = pl.position - org;
-       
+		float3 dir = normalize(pl.position - org);
+
         Ray shadowRay = Ray(org, dir);
 
 		for (Mesh &mesh : meshes) {
