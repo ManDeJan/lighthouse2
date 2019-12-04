@@ -112,3 +112,4 @@ apps/imguiapp/x64/Debug/imguiapp.tlog/imguiapp.write.1u.tlog
 lib/RenderCore_HardCore/x64/Debug/ray.obj
 .vs/
 lib/RenderSystem/lib/Debug/
+workspace.code-workspace
