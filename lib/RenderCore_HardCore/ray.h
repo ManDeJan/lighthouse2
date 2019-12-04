@@ -27,5 +27,6 @@ public:
 
 // Code adapted from slides
 optional<float> intersect(const Ray &ray, const CoreTri &tri);
+float3 calculateColor(const Ray &ray, const CoreTri &tri, float t, vector<CoreMaterial> &materials, uint recursion_depth = 3); // default 3 recursions
 
 } // namespace lh2core

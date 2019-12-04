@@ -82,11 +82,12 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
     
 	for (int y = 0; y < ny; y++) {
         for (int x = 0; x < nx; x++) {
-            float3 sx = x * dx * (view.p2 - view.p1); // screen widt
+            float3 sx = x * dx * (view.p2 - view.p1); // screen width
             float3 sy = y * dy * (view.p3 - view.p1); // screen height
             float3 point = view.p1 + sx + sy;         // point on the screen
             float3 dir = normalize(point - view.pos); // direction
             Ray ray = Ray(view.pos, dir);
+            CoreTri *tri;
             
             float t_min = numeric_limits<float>::max();
             for (Mesh &mesh : meshes) {
@@ -94,22 +95,23 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                     auto t = intersect(ray, mesh.triangles[i]);
                     if (t && *t < t_min) {
                         t_min = *t;
-                        // print(t_min);
-                        // if (t != 0) print(t_min);
-                        // abs_min = abs_min < t_min ? abs_min : t_min;
-                        // abs_max = abs_max > t_min ? abs_max : t_min;
-                        // print(abs_min, " ", abs_max);
+                        tri = &mesh.triangles[i]; 
                     }
                 }
             }
-            if (t_min != numeric_limits<float>::max()) {
-                uint color = map(t_min, 0.0f, 10.0f, 255.0f, 0.0f);
-                color = color << 16 | color << 8;// | color;
-                screen->Plot(x, y, color);
-            }
-            // print(">>> pixel done... (", x, ")\n");
+            
+            float3 color = calculateColor(ray, *tri, t_min, materials);
+            uint color_rgb = ((uint)(clamp(color.z * 255.0f, 0.0f, 255.0f)) << 16) +
+                             ((uint)(clamp(color.y * 255.0f, 0.0f, 255.0f)) <<  8) +
+                              (uint)(clamp(color.x * 255.0f, 0.0f, 255.0f));
+            screen->Plot(x, y, color_rgb);
+            // Depth map color function
+            // if (t_min != numeric_limits<float>::max()) {
+            //     uint color = map(t_min, 0.0f, 14.0f, 255.0f, 0.0f);
+            //     color = color << 16 | color << 8;// | color;
+            //     screen->Plot(x, y, color);
+            // }
         }
-        // print(">>> horizontal line done... (", y, ")\n");
     }
 
 
@@ -147,6 +149,11 @@ void RenderCore::SetLights(const CoreLightTri *areaLights,
     // print("HELP IK WORDT GEZET");
     this->pointLights = vector(pointLights, pointLights + pointLightCount);
     // not supported yet
+}
+
+void RenderCore::SetMaterials(CoreMaterial *mat, const CoreMaterialEx *matEx, const int materialCount) {
+    // print("hoi")
+    this->materials = vector(mat, mat + materialCount); // TODO: Don't ignore textures;
 }
 
 //  +-----------------------------------------------------------------------------+

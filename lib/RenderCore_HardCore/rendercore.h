@@ -52,14 +52,17 @@ public:
                    const int spotLightCount,
                    const CoreDirectionalLight *directionalLights,
                    const int directionalLightCount);
+    void SetMaterials(CoreMaterial *mat, const CoreMaterialEx *matEx, const int materialCount);
     void Shutdown();
     // internal methods
 private:
     // data members
     Bitmap *screen = 0;      // temporary storage of RenderCore output; will be copied to render target
     int targetTextureID = 0; // ID of the target OpenGL texture
-    vector<Mesh> meshes;     // mesh data storage
-    vector<CorePointLight> pointLights;
+
+    vector<Mesh> meshes;                // mesh data storage
+    vector<CorePointLight> pointLights; //
+    vector<CoreMaterial> materials;     //
 
 public:
     CoreStats coreStats; // rendering statistics
