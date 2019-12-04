@@ -99,8 +99,17 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                     }
                 }
             }
-            float3 color = calculateColor(ray, *tri, t_min, materials) * directIllumination(ray.dir * t_min + ray.org);
+
+
+			//float3 color = make_float3(0, 0.5, 1);
+            
+			//*tri is not initialized if no intersection has occured
+            //float3 color = calculateColor(ray, *tri, t_min, materials) * directIllumination(ray.dir * t_min + ray.org, cross(tri->vertex0, tri->vertex1));
+            float3 color = calculateColor(ray, t_min, materials) *
+                           directIllumination(ray.dir * t_min + ray.org, cross(tri->vertex0, tri->vertex1));
             //color = directIllumination(ray.dir * t_min + ray.org);
+
+			
             uint color_rgb = ((uint)(clamp(color.z * 255.0f, 0.0f, 255.0f)) << 16) +
                              ((uint)(clamp(color.y * 255.0f, 0.0f, 255.0f)) << 8) +
                              (uint)(clamp(color.x * 255.0f, 0.0f, 255.0f));
@@ -114,8 +123,6 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
             // }
         }
     }
-
- 
 
     // render minimal
     // screen->Clear();
@@ -140,23 +147,32 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                  screen->pixels);
 }
 
-float3 RenderCore::directIllumination(float3 &org) {
+float3 RenderCore::directIllumination(float3 &org, float3 &norm) {
     for (CorePointLight pl : this->pointLights) {
-        
-		float3 dir = normalize(pl.position - org);
+        float3 dir = normalize(pl.position - org);
 
         Ray shadowRay = Ray(org, dir);
 
-		for (Mesh &mesh : meshes) {
-            for (int i = 0; i < mesh.vcount / 3; i++) { 
-				if (intersect(shadowRay, mesh.triangles[i]))
-					return make_float3(0.0f, 0.0f, 0.0f);
-			}
-		}
-        return make_float3(1.0f, 1.0f, 1.0f);
+        for (Mesh &mesh : meshes) {
+            for (int i = 0; i < mesh.vcount / 3; i++) {
+                if (intersect(shadowRay, mesh.triangles[i])) {
+                    return make_float3(0.0f, 0.0f, 0.0f);
+                }
+            }
+        }
+		//float angle = acos(dot(norm, dir)/sqrt((dot(norm,norm) * dot(dir,dir))))*180/PI;
 
-	}
+		float3 vec1 = normalize(dir - org);
+        float3 vec2 = normalize(norm - org);
+		
+		float angle = (acos(dot(vec1, vec2))*180/PI)/90;
+
+		//print(angle);
+        return make_float3(angle, angle, angle);
+		//return make_float3(1.0f, 1.0f, 1.0f);
+    }
 }
+
 
 void RenderCore::SetLights(const CoreLightTri *areaLights,
                            const int areaLightCount,

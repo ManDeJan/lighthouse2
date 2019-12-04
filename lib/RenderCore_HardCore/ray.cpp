@@ -32,8 +32,8 @@ optional<float> intersect(const Ray &ray, const CoreTri &tri) {
     return nullopt;
 }
 
+//float3 calculateColor(const Ray &ray, const CoreTri &tri, float t, vector<CoreMaterial> &materials, uint recursion_depth) {}
 float3 calculateColor(const Ray &ray,
-                      const CoreTri &tri,
                       float t,
                       vector<CoreMaterial> &materials,
                       uint recursion_depth) { // default 3 recursions
@@ -42,7 +42,7 @@ float3 calculateColor(const Ray &ray,
     if (!recursion_depth) return color;
 
     if (t == numeric_limits<float>::max()) return make_float3(0, 0.5, 1); // I guess this is a sky-ish color?
-    
+
     // hier kleuren gaan doen
 
     return color;

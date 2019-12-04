@@ -75,7 +75,7 @@ void PrepareScene() {
     int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 8.0f, 0), 6.9f, 6.9f, lightMat);
     // renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
     renderer->AddPointLight(make_float3(-15.0f, 5.0f, 0), make_float3(100, 100, 100), true);
-    renderer->AddQuad(make_float3(0, -1, 0), make_float3(-15.0f, 5.0f, 0),0.3f,0.3f,lightMat); //visualize position of pointlight
+    //renderer->AddQuad(make_float3(0, -1, 0), make_float3(-15.0f, 5.0f, 0),0.3f,0.3f,lightMat); //visualize position of pointlight
 	
 #else
     // difficult light; use BDPT

@@ -64,7 +64,7 @@ private:
     vector<CorePointLight> pointLights; //
     vector<CoreMaterial> materials;     //
 
-	float3 directIllumination(float3 &org);
+	float3 directIllumination(float3 &org, float3 &norm);
 
 public:
     CoreStats coreStats; // rendering statistics
