@@ -105,9 +105,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
             
 			//*tri is not initialized if no intersection has occured
             //float3 color = calculateColor(ray, *tri, t_min, materials) * directIllumination(ray.dir * t_min + ray.org, cross(tri->vertex0, tri->vertex1));
-            float3 color = calculateColor(ray, t_min, materials) *
-                           directIllumination(ray.dir * t_min + ray.org, cross(tri->vertex0, tri->vertex1));
-            //color = directIllumination(ray.dir * t_min + ray.org);
+            float3 color = calculateColor(ray, t_min, *tri);
 
 			
             uint color_rgb = ((uint)(clamp(color.z * 255.0f, 0.0f, 255.0f)) << 16) +
@@ -150,7 +148,6 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
 float3 RenderCore::calculateColor(const Ray &ray,
                                   float t,
 								  CoreTri &tri,	
-                                  vector<CoreMaterial> &materials,
                                   uint recursion_depth) { // default 3 recursions
 
     float3 color = make_float3(0, 200, 0);

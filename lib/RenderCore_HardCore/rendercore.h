@@ -66,7 +66,7 @@ private:
 
 	float3 directIllumination(float3 &org, float3 &norm);
     //float3 calcColor(Ray &ray, CoreTri &tri, float &t);
-    float3 calculateColor(const Ray &ray, float t, CoreTri &tri, vector<CoreMaterial> &materials, uint recursion_depth = 3);
+    float3 calculateColor(const Ray &ray, float t, CoreTri &tri, uint recursion_depth = 3);
 
 public:
     CoreStats coreStats; // rendering statistics
