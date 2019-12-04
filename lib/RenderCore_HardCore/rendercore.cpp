@@ -163,13 +163,23 @@ float3 RenderCore::calculateColor(const Ray &ray,
         float specularity = material.specular();
         float diffuse = 1.0f - specularity;
 
+		float3 triNormal = cross(tri.vertex0, tri.vertex1);
+        float3 intersect = ray.dir * t + ray.org;
+
 		float r = material.diffuse_r, g = material.diffuse_g, b = material.diffuse_b;
-        color = diffuse * make_float3(r,g,b) * directIllumination(ray.dir * t + ray.org, cross(tri.vertex0, tri.vertex1));
+        color = diffuse * make_float3(r,g,b) * directIllumination(intersect, triNormal);
+
+		color += specularity *
+                 calculateColor(Ray(intersect, reflect(ray.dir, triNormal)), t, tri, materials, recursion_depth - 1);
 		return color;
 	}
     // hier kleuren gaan doen
 
     return color;
+}
+
+float3 reflect(float3 in, float3 norm) {
+    return normalize(in - 2 * dot(in, norm) * norm);
 }
 
 float3 RenderCore::directIllumination(float3 &org, float3 &norm) {
