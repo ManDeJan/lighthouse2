@@ -67,7 +67,7 @@ void CoreAPI::SetTextures(const CoreTexDesc *tex, const int textureCount) {
 }
 
 void CoreAPI::SetMaterials(CoreMaterial *mat, const CoreMaterialEx *matEx, const int materialCount) {
-    // core->SetMaterials( mat, matEx, materialCount ); TODO
+    core->SetMaterials(mat, matEx, materialCount);
 }
 
 void CoreAPI::SetGeometry(const int meshIdx,
