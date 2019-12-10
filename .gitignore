@@ -126,3 +126,4 @@ lib/RenderSystem/x64/
 lib/platform/x64/
 lib/platform/lib/Release/platform.lib
 lib/RenderSystem/lib/Release/
+lib/RenderCore_Whitted/x64/
