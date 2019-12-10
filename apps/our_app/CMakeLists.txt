@@ -9,7 +9,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE imgui)
 
 # Internal dependencies:
 target_link_libraries(${PROJECT_NAME} PRIVATE RenderSystem)
-target_link_libraries(${PROJECT_NAME} PRIVATE RenderCore_HardCore)
+target_link_libraries(${PROJECT_NAME} PRIVATE RenderCore_Whitted)
 
 register_app(${PROJECT_NAME})
 

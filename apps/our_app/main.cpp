@@ -166,7 +166,7 @@ int main() {
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Minimal" );           // MINIMAL example, to get you started on your own core
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_Vulkan_RT" );         // Meir's Vulkan / RTX core
     // renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_BDPT" );   // Peter's OptixPrime / BDPT core
-    renderer = RenderAPI::CreateRenderAPI("RenderCore_HardCore"); // Our own custom core
+    renderer = RenderAPI::CreateRenderAPI("RenderCore_Whitted"); // Our own custom core
 
     renderer->DeserializeCamera("camera.xml");
     // initialize scene

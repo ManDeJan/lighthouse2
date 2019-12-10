@@ -101,6 +101,7 @@ endif()
 add_render_core("lib/RenderCore_SoftRasterizer")
 add_render_core("lib/RenderCore_Minimal")
 add_render_core("lib/RenderCore_HardCore")
+add_render_core("lib/RenderCore_Whitted")
 
 message(STATUS "Found RenderCores: ${render_cores}")
 
