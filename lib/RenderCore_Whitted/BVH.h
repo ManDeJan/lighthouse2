@@ -13,26 +13,63 @@ public:
 class Node {
     AABB bounds;
     int leftFirst;
-    int count;
+
 
 public:
-    int getFirst() {
+    int count;
+
+	//leaf node
+    Node(int first, int count) : leftFirst(first), count(count) {
+        calculateBounds(first, count);
+    
+	}                                                           
+    Node(int left, AABB bounds) : leftFirst(left), bounds(bounds) {}                            //node
+    
+	void setFirst(int first) {
+        leftFirst = first;
+	}
+    void setLeft(int left) {
+        leftFirst = left;
+    }
+    int first() {
         return leftFirst;
     }
+	int left() {
+        return leftFirst;
+	}
+	int right() {
+        return leftFirst + 1;
+	}
+
+	void setCount(int count) {
+        this->count = count;
+	}
+
+	void setBounds(AABB bounds) {
+        this->bounds = bounds;
+	}
+
     bool isLeaf() {
         return count;
     }
-    Node(int first, int count, AABB aabb) {}
-    Node(int left, AABB aabb) {}
+
+
+	void subdivide() {
+
+	}
+
+	void partition();
 };
 
 class BVH {
 public:
-    void ConstructBVH(Primitive *primitives);
+    void constructBVH(vector<CoreTri> *primitives, size_t N);
     Node *root;
 
 private:
-    vector<Node> nodes;
-    size_t nodeIndex;
+
 };
+
+vector<Node> nodes;
+size_t nodeIndex;
 } // namespace lh2core
