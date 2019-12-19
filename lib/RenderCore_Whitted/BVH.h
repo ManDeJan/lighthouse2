@@ -19,11 +19,9 @@ class Node {
 public:
     int count;
 
-	Node();
+	Node() = default;
     //leaf node
-    Node(int first, int count) : leftFirst(first), count(count) {
-        bounds = calculateBounds(first, count);
-    }
+    Node(int first, int count, AABB bounds) : leftFirst(first), count(count), bounds(bounds) {}
 
     Node(int left, AABB bounds) : leftFirst(left), bounds(bounds) {} //node
 
