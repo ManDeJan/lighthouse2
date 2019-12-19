@@ -4,9 +4,14 @@ namespace lh2core {
 
 void BVH::constructBVH(vector<CoreTri> &primitives) {
     // create index array
+<<<<<<< .merge_file_a11848
 
     size_t N = primitives.size();
     indices = new uint[N];
+=======
+	
+    indices.resize(N);
+>>>>>>> .merge_file_a01576
     for (int i = 0; i < N; i++) indices[i] = i;
     // allocate BVH root node
     nodes.clear();
