@@ -6,8 +6,8 @@ namespace lh2core {
 
 class AABB {
 public:
-    float x, y, z, xd, yd, zd;
-    AABB(float x, float y, float z, float xd, float yd, float zd) : x(x), y(y), z(z), xd(xd), yd(yd), zd(zd) {}
+    float3 minBounds, maxBounds;
+    AABB(float3 minBounds, float3 maxBounds) : minBounds(minBounds), maxBounds(maxBounds) {}
 };
 
 AABB calculateBounds(int first, int count);
@@ -19,6 +19,7 @@ class Node {
 public:
     int count;
 
+	Node();
     //leaf node
     Node(int first, int count) : leftFirst(first), count(count) {
         bounds = calculateBounds(first, count);
@@ -61,12 +62,15 @@ public:
 
 class BVH {
     const Mesh &primitives;
-    
+
 public:
     BVH(Mesh &primitives) : primitives(primitives) {}
     Node *root;
 };
 
+Node *root;
 vector<Node> nodes;
+vector<CoreTri> *primitives;
+uint indices[1];
 size_t nodeIndex;
 } // namespace lh2core
