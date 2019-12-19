@@ -8,6 +8,7 @@ class AABB {
 public:
     float3 minBounds, maxBounds;
     AABB(float3 minBounds, float3 maxBounds) : minBounds(minBounds), maxBounds(maxBounds) {}
+    AABB() = default;
 };
 
 AABB calculateBounds(int first, int count);
@@ -19,16 +20,11 @@ class Node {
 public:
     int count;
 
-	Node() = default;
+    Node() = default;
     //leaf node
-<<<<<<< HEAD
-    Node(int first, int count, AABB bounds) : leftFirst(first), count(count), bounds(bounds) {}
-=======
     Node(int first, int count) : leftFirst(first), count(count), bounds(calculateBounds(first, count)) {
         // bounds = calculateBounds(first, count);
     }
->>>>>>> dcbf03a5927ee04a921d285c86de723e8e0852b0
-
     Node(int left, AABB bounds) : leftFirst(left), bounds(bounds) {} //node
 
     void setFirst(int first) {
@@ -66,13 +62,12 @@ public:
 
 class BVH {
 public:
-
     static const Mesh &primitives;
     static Node *root;
     static vector<Node> nodes;
     static vector<uint> indices;
-    static vector<CoreTri> *primitives;
-    
+    static vector<CoreTri> primitives;
+
     BVH(Mesh &primitives) : primitives(primitives) {}
     void constructBVH(vector<CoreTri> &primitives, size_t N);
 
