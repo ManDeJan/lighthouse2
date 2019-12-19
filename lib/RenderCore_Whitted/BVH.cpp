@@ -5,7 +5,7 @@ namespace lh2core {
 void BVH::constructBVH(vector<CoreTri> &primitives, size_t N) {
     // create index array
 	
-    indices = new uint[N];
+    indices.resize(N);
     for (int i = 0; i < N; i++) indices[i] = i;
     // allocate BVH root node
     nodes.clear();
