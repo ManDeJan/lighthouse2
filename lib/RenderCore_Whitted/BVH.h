@@ -11,8 +11,6 @@ public:
     AABB() = default;
 };
 
-AABB calculateBounds(int first, int count);
-
 class Node {
     AABB bounds;
     int leftFirst;
@@ -22,9 +20,7 @@ public:
 
     Node() = default;
     //leaf node
-    Node(int first, int count) : leftFirst(first), count(count), bounds(calculateBounds(first, count)) {
-        // bounds = calculateBounds(first, count);
-    }
+    Node(int first, int count, AABB bounds) : leftFirst(first), count(count), bounds(bounds) {}
     Node(int left, AABB bounds) : leftFirst(left), bounds(bounds) {} //node
 
     void setFirst(int first) {
@@ -62,18 +58,17 @@ public:
 
 class BVH {
 public:
-    static const Mesh &primitives;
     static Node *root;
     static vector<Node> nodes;
+    static size_t nodeIndex;
     static vector<uint> indices;
     static vector<CoreTri> primitives;
 
-    BVH(Mesh &primitives) : primitives(primitives) {}
-    void constructBVH(vector<CoreTri> &primitives, size_t N);
-
-    Node *root;
+    BVH(Mesh &mesh) {
+        primitives = vector<CoreTri>(mesh.triangles, mesh.triangles + mesh.vcount / 3);
+    }
+    void constructBVH();
 };
 
-// size_t nodeIndex;
 // uint indices[1];
 } // namespace lh2core
