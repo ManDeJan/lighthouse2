@@ -97,7 +97,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                 float3 direction = normalize(view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1) - view.pos);
 
                 Ray primaryRay(view.pos, direction);
-                Intersection i = getNearestIntersection(primaryRay);
+                Intersection i = getNearestIntersection(primaryRay); // duplicate nearest intersection?? Zie calcRayColor
 
                 // Calculate color and store in accumulator buffer.
                 float3 pixelColor = calcRayColor(primaryRay, 0);

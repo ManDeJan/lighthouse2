@@ -12,11 +12,11 @@ public:
 };
 
 class Node {
-    AABB bounds;
     int leftFirst;
 
 public:
     int count;
+    AABB bounds;
 
     Node() = default;
     //leaf node

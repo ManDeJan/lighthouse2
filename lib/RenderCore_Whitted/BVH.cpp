@@ -183,10 +183,68 @@ void Node::partition() {
     setLeft(BVH::nodeIndex + 1);
     setCount(0);
 
-    //TODO:
-    //write bestleftsplit to left side of indices and bestrightsplit to right side of indices
-    //initialize left and right node
-    //rewrite current node to non-leaf node
+}
+
+//WHAT DO WE RETURN? AN Intersection??
+void BVHIntersection(Ray& r, Node& n) {
+	if (rayBoxIntersection(r, n.bounds))
+	{
+		if (n.isLeaf()) {
+			for (int i; i < n.count; i++) { 
+				int index = i + n.count;
+                CoreTri &triangle = BVH::primitives[BVH::indices[index]];
+				
+				//INTERSECT TRIANGLE
+                float intersectDistance = r.calcIntersectDist(triangle);
+			}
+        } else {
+			//intersect left and right
+            BVHIntersection(r, BVH::nodes[n.left()]);
+            BVHIntersection(r, BVH::nodes[n.right()]);
+		}
+
+	}
+}
+
+
+bool rayBoxIntersection(const Ray& r, const AABB& box) {
+	// https: //gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+	float3 lb = box.minBounds;
+    float3 rt = box.maxBounds;
+
+	float3 dirfrac;
+    // r.dir is unit direction vector of ray
+    dirfrac.x = 1.0f / r.direction.x;
+    dirfrac.y = 1.0f / r.direction.y;
+    dirfrac.z = 1.0f / r.direction.z;
+    // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+    // r.org is origin of ray
+    float t1 = (lb.x - r.origin.x) * dirfrac.x;
+    float t2 = (rt.x - r.origin.x) * dirfrac.x;
+    float t3 = (lb.y - r.origin.y) * dirfrac.y;
+    float t4 = (rt.y - r.origin.y) * dirfrac.y;
+    float t5 = (lb.z - r.origin.z) * dirfrac.z;
+    float t6 = (rt.z - r.origin.z) * dirfrac.z;
+
+    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    if (tmax < 0) {
+        t = tmax;
+        return false;
+    }
+
+    // if tmin > tmax, ray doesn't intersect AABB
+    if (tmin > tmax) {
+        t = tmax;
+        return false;
+    }
+
+    t = tmin;
+    return true;
+
+
 }
 
 } // namespace lh2core
