@@ -185,27 +185,6 @@ void Node::partition() {
 
 }
 
-//WHAT DO WE RETURN? AN Intersection??
-void BVHIntersection(Ray& r, Node& n) {
-	if (rayBoxIntersection(r, n.bounds))
-	{
-		if (n.isLeaf()) {
-			for (int i; i < n.count; i++) { 
-				int index = i + n.count;
-                CoreTri &triangle = BVH::primitives[BVH::indices[index]];
-				
-				//INTERSECT TRIANGLE
-                float intersectDistance = r.calcIntersectDist(triangle);
-			}
-        } else {
-			//intersect left and right
-            BVHIntersection(r, BVH::nodes[n.left()]);
-            BVHIntersection(r, BVH::nodes[n.right()]);
-		}
-
-	}
-}
-
 
 bool rayBoxIntersection(const Ray& r, const AABB& box) {
 	// https: //gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
@@ -231,20 +210,46 @@ bool rayBoxIntersection(const Ray& r, const AABB& box) {
 
     // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
     if (tmax < 0) {
-        t = tmax;
+		//outcommented t, I don't think we need to return t for the bounding box right?
+        //t = tmax;
         return false;
     }
 
     // if tmin > tmax, ray doesn't intersect AABB
     if (tmin > tmax) {
-        t = tmax;
+        //t = tmax;
         return false;
     }
 
-    t = tmin;
+    //t = tmin;
     return true;
 
 
 }
 
+//WHAT DO WE RETURN? AN Intersection??
+Intersection BVHIntersection(Ray &r, Node &n) {
+    if (rayBoxIntersection(r, n.bounds)) {
+        if (n.isLeaf()) {
+            Intersection j;
+            for (int i; i < n.count; i++) {
+                int index = i + n.count;
+                CoreTri &triangle = BVH::primitives[BVH::indices[index]];
+
+                //INTERSECT TRIANGLE
+                float t = r.calcIntersectDist(triangle);
+                if (t < j.distance && t > 0) {
+                    j.distance = t;
+                    j.triangle = &triangle;
+                    j.location = r.origin + r.direction * j.distance;
+                }
+            }
+            return j;
+        } else {
+            //intersect left and right
+            BVHIntersection(r, BVH::nodes[n.left()]);
+            BVHIntersection(r, BVH::nodes[n.right()]);
+        }
+    }
+}
 } // namespace lh2core
