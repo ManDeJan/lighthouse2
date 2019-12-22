@@ -12,10 +12,12 @@ float3 triangleCenter(CoreTri &tri) {
     return (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 }
 
-float calculateSAH(AABB bounds) {
+float calculateRawSAH(AABB bounds) {//not including the number of primitves
     float3 box = bounds.maxBounds - bounds.minBounds;
-    return BVH::indices.size() * (2 * box.x * box.y + 2 * box.y * box.z + 2 * box.z * box.x);
+    //return BVH::indices.size() * (2 * box.x * box.y + 2 * box.y * box.z + 2 * box.z * box.x);
+    return (2 * box.x * box.y + 2 * box.y * box.z + 2 * box.z * box.x);
 }
+
 
 AABB calculateBounds(const vector<uint> &indices) {
     float3 minBounds =
@@ -50,6 +52,7 @@ AABB calculateBounds(const vector<uint> &indices) {
 //     return AABB(minBounds, maxBounds);
 // }
 
+
 void BVH::constructBVH() {
     // create index array
 
@@ -77,6 +80,7 @@ void Node::subdivide() {
     BVH::nodes[left()].subdivide();
     BVH::nodes[right()].subdivide();
 }
+
 
 void Node::partition() {
     float bestSplitCost;
@@ -108,7 +112,7 @@ void Node::partition() {
         //calculate cost on X
         boundsSL = calculateBounds(splitLeft);
         boundsSR = calculateBounds(splitRight);
-        float cost = calculateSAH(boundsSL) + calculateSAH(boundsSR);
+        float cost = splitLeft.size() * calculateRawSAH(boundsSL) + splitRight.size() * calculateRawSAH(boundsSR);
         if (cost < bestSplitCost) {
             bestSplitCost = cost;
             bestSplitLeft = splitLeft;
@@ -134,7 +138,7 @@ void Node::partition() {
         //calculate cost on Y
         boundsSL = calculateBounds(splitLeft);
         boundsSR = calculateBounds(splitRight);
-        cost = calculateSAH(boundsSL) + calculateSAH(boundsSR);
+        cost = splitLeft.size() * calculateRawSAH(boundsSL) + splitRight.size() * calculateRawSAH(boundsSR);
         if (cost < bestSplitCost) {
             bestSplitCost = cost;
             bestSplitLeft = splitLeft;
@@ -160,7 +164,7 @@ void Node::partition() {
         //calculate cost on Z
         boundsSL = calculateBounds(splitLeft);
         boundsSR = calculateBounds(splitRight);
-        cost = calculateSAH(boundsSL) + calculateSAH(boundsSR);
+        cost = splitLeft.size() * calculateRawSAH(boundsSL) + splitRight.size() * calculateRawSAH(boundsSR);
         if (cost < bestSplitCost) {
             bestSplitCost = cost;
             bestSplitLeft = splitLeft;
@@ -170,21 +174,153 @@ void Node::partition() {
         }
     }
 
+	convertNode(bestSplitLeft, bestBSL, bestSplitRight, bestBSR);
+}
+
+void Node::convertNode(vector<uint> left, AABB leftAABB, vector<uint> right, AABB rightAABB) {
     //Create left node
-    for (int i = 0; i < bestSplitLeft.size(); i++) BVH::indices[first() + i] = bestSplitLeft[i];
-    BVH::nodes[BVH::nodeIndex + 1] = Node(first(), bestSplitLeft.size(), bestBSL);
+    for (int i = 0; i < left.size(); i++) BVH::indices[first() + i] = left[i];
+    BVH::nodes[BVH::nodeIndex + 1] = Node(first(), left.size(), leftAABB);
 
     //create right node
-    for (int i = 0; i < bestSplitRight.size(); i++)
-        BVH::indices[first() + bestSplitLeft.size() + i] = bestSplitRight[i];
-    BVH::nodes[BVH::nodeIndex + 2] = Node(first() + bestSplitLeft.size(), bestSplitRight.size(), bestBSR);
+    for (int i = 0; i < right.size(); i++) BVH::indices[first() + left.size() + i] = right[i];
+    BVH::nodes[BVH::nodeIndex + 2] = Node(first() + left.size(), right.size(), rightAABB);
 
     //setLeftNode and set to parent node
     setLeft(BVH::nodeIndex + 1);
     setCount(0);
-
 }
 
+AABB mergeBounds(AABB a, AABB b) {
+    float3 min, max;
+    min.x = a.minBounds.x > b.minBounds.x ? a.minBounds.x : b.minBounds.x;
+    min.y = a.minBounds.y > b.minBounds.y ? a.minBounds.y : b.minBounds.y;
+    min.z = a.minBounds.z > b.minBounds.z ? a.minBounds.z : b.minBounds.z;
+
+	
+    max.x = a.maxBounds.x > b.maxBounds.x ? a.maxBounds.x : b.maxBounds.x;
+    max.y = a.maxBounds.y > b.maxBounds.y ? a.maxBounds.y : b.maxBounds.y;
+    max.z = a.maxBounds.z > b.maxBounds.z ? a.maxBounds.z : b.maxBounds.z;
+    return (AABB(min, max));
+}
+
+
+void Bin::evaluateBounds() {
+    bounds = calculateBounds(primIndices);
+}
+AABB Bin::evaluateGetBounds() {
+    return bounds = calculateBounds(primIndices);
+}
+
+void Node::binnedPartition() {
+	//16 bins along widest axis
+    const int nBins = 16;
+    Bin bins[nBins];
+    float interval;
+    float k1, k0;
+
+	float3 dim = bounds.maxBounds - bounds.minBounds;
+	
+	//Populate bins
+	if (dim.x >= dim.y && dim.x >= dim.z){ 
+		interval = dim.x / nBins;
+        k0 = bounds.minBounds.x;
+        k1 = (nBins - EPSILON)/ dim.x;
+
+		for (int i = 0; i < count; i++) {
+            uint indexi = BVH::indices[first() + i];
+            CoreTri prim = BVH::primitives[indexi];
+            float primCenter = triangleCenter(prim).x;
+
+			int binId = k1 * (primCenter - k0);
+            bins[binId].addPrim(indexi);
+		}
+
+	} else if (dim.y >= dim.x && dim.y >= dim.z){
+        interval = dim.y / nBins;
+        k0 = bounds.minBounds.y;
+        k1 = (nBins - EPSILON) / dim.y;
+
+        for (int i = 0; i < count; i++) {
+            uint indexi = BVH::indices[first() + i];
+            CoreTri prim = BVH::primitives[indexi];
+            float primCenter = triangleCenter(prim).y;
+
+            int binId = k1 * (primCenter - k0);
+            bins[binId].addPrim(indexi);
+        }
+	} else{//dim z
+        interval = dim.z / nBins;
+        k0 = bounds.minBounds.z;
+        k1 = (nBins - EPSILON) / dim.z;
+
+        for (int i = 0; i < count; i++) {
+            uint indexi = BVH::indices[first() + i];
+            CoreTri prim = BVH::primitives[indexi];
+            float primCenter = triangleCenter(prim).z;
+
+            int binId = k1 * (primCenter - k0);
+            bins[binId].addPrim(indexi);
+        }
+	}
+
+
+	Bin leftBins[nBins]; //aggregation of bins
+    
+	bins[0].evaluateBounds();
+	leftBins[0] = bins[0];
+    leftBins[0].cost = calculateRawSAH(leftBins[0].bounds) * leftBins[0].count;
+
+	//evaluateBounds for each bin and sweep from left
+    for (int i = 1; i++;i<nBins) { 
+        Bin &a = leftBins[i - 1];	//previous aggregated bins
+        Bin &b = leftBins[i];		//current bin to be calculated
+        Bin &bin = bins[i];			//bin to be added to current bin
+
+		b.primIndices = a.primIndices;
+        b.primIndices.insert(b.primIndices.end(), bin.primIndices.begin(), bin.primIndices.end());
+        b.bounds = mergeBounds(a.bounds, bin.evaluateGetBounds());
+        b.count = a.count + bin.count;
+        b.cost = calculateRawSAH(b.bounds) * b.count;
+	}
+
+    
+	Bin rightBins[nBins]; //aggregation of bins
+    int ii = nBins - 1;
+    bins[ii].evaluateBounds();
+    rightBins[ii] = bins[ii];
+    rightBins[ii].cost = calculateRawSAH(rightBins[ii].bounds) * rightBins[ii].count;
+
+    //evaluateBounds for each bin and sweep from right
+    for (int i = 1; i++; i < nBins) {
+        Bin &a = rightBins[ii - i + 1];	//previous aggregated bins
+        Bin &b = rightBins[ii - i];		//current bin to be calculated
+        Bin &bin = bins[ii - i];		//bin to be added to current bin
+
+        b.primIndices = a.primIndices;
+        b.primIndices.insert(b.primIndices.end(), bin.primIndices.begin(), bin.primIndices.end());
+        b.bounds = mergeBounds(a.bounds, bin.evaluateGetBounds());
+        b.count = a.count + bin.count;
+        b.cost = calculateRawSAH(b.bounds) * b.count;
+    }
+
+	//find optimal split
+	float optimalCost = numeric_limits<float>::max();
+    Bin bestLeft;
+	Bin bestRight;
+
+	for (int i = 0; i++; i < nBins - 1) { 
+		Bin &left = leftBins[i];
+        Bin &right = rightBins[i];
+		float totalCost = left.cost + right.cost;
+		if (totalCost < optimalCost) { 
+			optimalCost = totalCost;
+            bestLeft = left;
+            bestRight = right;
+		}
+	}
+    convertNode(bestLeft.primIndices, bestLeft.bounds, bestRight.primIndices, bestRight.bounds);
+}
 
 bool rayBoxIntersection(const Ray& r, const AABB& box) {
 	// https: //gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
