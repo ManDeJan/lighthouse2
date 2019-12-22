@@ -15,7 +15,11 @@
 
 #pragma once
 
+#include "core_settings.h"
+#include "BVH.h"
+
 namespace lh2core {
+    
 class Intersection {
 public:
     CoreTri *triangle;
@@ -124,6 +128,7 @@ private:
     vector<CoreDirectionalLight> dirLights; // directional light storage
     vector<CoreSpotLight> spotLights;       // spotlight storage
     vector<CoreLightTri> areaLights;        // arealight storage
+    BVH bvh;
 
     // Store skydata
     vector<float3> skyData;

@@ -1,5 +1,7 @@
 #include "BVH.h"
 
+#include "rendercore.h"
+
 namespace lh2core {
 
 Node *BVH::root;
@@ -55,7 +57,7 @@ void BVH::constructBVH() {
 
     size_t N = primitives.size();
     indices.resize(N);
-    for (int i = 0; i < N; i++) indices[i] = i;
+    for (size_t i = 0; i < N; i++) indices[i] = i;
     // allocate BVH root node
     nodes.clear();
     nodes.resize(N * 2 - 1);
@@ -66,6 +68,10 @@ void BVH::constructBVH() {
     root->setCount(N);
     root->setBounds(calculateBounds(indices));
     root->subdivide();
+}
+
+void BVH::setMesh(Mesh &mesh) {
+    primitives = vector<CoreTri>(mesh.triangles, mesh.triangles + mesh.vcount / 3);
 }
 
 void Node::subdivide() {
@@ -79,19 +85,16 @@ void Node::subdivide() {
 }
 
 void Node::partition() {
-    float bestSplitCost;
-    vector<uint> bestSplitLeft;
-    vector<uint> bestSplitRight;
+    float bestSplitCost = numeric_limits<float>::max();
+    vector<uint> bestSplitLeft, bestSplitRight;
     AABB bestBSL, bestBSR;
 
     for (int i = 0; i < count; i++) {
         CoreTri primSplit = BVH::primitives[BVH::indices[first() + i]];
         float3 primSplitCenter = triangleCenter(primSplit);
 
-        vector<uint> splitLeft;
-        vector<uint> splitRight;
-        AABB boundsSL;
-        AABB boundsSR;
+        vector<uint> splitLeft, splitRight;
+        AABB boundsSL, boundsSR;
 
         // X
         //split left and right on X
@@ -171,27 +174,25 @@ void Node::partition() {
     }
 
     //Create left node
-    for (int i = 0; i < bestSplitLeft.size(); i++) BVH::indices[first() + i] = bestSplitLeft[i];
+    for (size_t i = 0; i < bestSplitLeft.size(); i++) BVH::indices[first() + i] = bestSplitLeft[i];
     BVH::nodes[BVH::nodeIndex + 1] = Node(first(), bestSplitLeft.size(), bestBSL);
 
     //create right node
-    for (int i = 0; i < bestSplitRight.size(); i++)
+    for (size_t i = 0; i < bestSplitRight.size(); i++)
         BVH::indices[first() + bestSplitLeft.size() + i] = bestSplitRight[i];
     BVH::nodes[BVH::nodeIndex + 2] = Node(first() + bestSplitLeft.size(), bestSplitRight.size(), bestBSR);
 
     //setLeftNode and set to parent node
     setLeft(BVH::nodeIndex + 1);
     setCount(0);
-
 }
 
-
-bool rayBoxIntersection(const Ray& r, const AABB& box) {
-	// https: //gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
-	float3 lb = box.minBounds;
+bool rayBoxIntersection(const Ray &r, const AABB &box) {
+    // https: //gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+    float3 lb = box.minBounds;
     float3 rt = box.maxBounds;
 
-	float3 dirfrac;
+    float3 dirfrac;
     // r.dir is unit direction vector of ray
     dirfrac.x = 1.0f / r.direction.x;
     dirfrac.y = 1.0f / r.direction.y;
@@ -210,7 +211,7 @@ bool rayBoxIntersection(const Ray& r, const AABB& box) {
 
     // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
     if (tmax < 0) {
-		//outcommented t, I don't think we need to return t for the bounding box right?
+        //outcommented t, I don't think we need to return t for the bounding box right?
         //t = tmax;
         return false;
     }
@@ -223,8 +224,6 @@ bool rayBoxIntersection(const Ray& r, const AABB& box) {
 
     //t = tmin;
     return true;
-
-
 }
 
 //WHAT DO WE RETURN? AN Intersection??
@@ -232,8 +231,8 @@ Intersection BVHIntersection(Ray &r, Node &n) {
     if (rayBoxIntersection(r, n.bounds)) {
         if (n.isLeaf()) {
             Intersection j;
-            for (int i; i < n.count; i++) {
-                int index = i + n.count;
+            for (size_t i = 0; i < n.count; i++) {
+                size_t index = i + n.count;
                 CoreTri &triangle = BVH::primitives[BVH::indices[index]];
 
                 //INTERSECT TRIANGLE

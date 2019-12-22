@@ -7,6 +7,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE COREDLL_EXPORTS=1)
 
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<BOOL:${MSVC}>:/openmp>)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<NOT:$<BOOL:${MSVC}>>:-fopenmp -Ofast>)
+target_compile_options(${PROJECT_NAME} PRIVATE $<$<NOT:$<BOOL:${MSVC}>>:-Wall -Wextra -Wno-unknown-pragmas -Wno-unused-parameter>)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE RenderSystem)
 set_target_properties(${PROJECT_NAME} PROPERTIES

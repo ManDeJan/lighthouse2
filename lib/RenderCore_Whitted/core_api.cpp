@@ -14,6 +14,7 @@
 */
 
 #include "core_settings.h"
+#include "rendercore.h"
 
 static CoreAPI_Base *coreInstance = NULL;
 

@@ -14,6 +14,7 @@
 */
 
 #include "core_settings.h"
+#include "rendercore.h"
 
 using namespace lh2core;
 
@@ -63,6 +64,8 @@ void RenderCore::SetGeometry(const int meshIdx,
     newMesh.triangles = new CoreTri[vertexCount / 3];
     memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
     meshes.push_back(newMesh);
+    bvh.setMesh(newMesh);
+    bvh.constructBVH();
 }
 
 //  +-----------------------------------------------------------------------------+

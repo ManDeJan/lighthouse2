@@ -56,6 +56,8 @@ public:
     void partition();
 };
 
+class Mesh;
+
 class BVH {
 public:
     static Node *root;
@@ -64,9 +66,7 @@ public:
     static vector<uint> indices;
     static vector<CoreTri> primitives;
 
-    BVH(Mesh &mesh) {
-        primitives = vector<CoreTri>(mesh.triangles, mesh.triangles + mesh.vcount / 3);
-    }
+    void setMesh(Mesh &mesh);
     void constructBVH();
 };
 
