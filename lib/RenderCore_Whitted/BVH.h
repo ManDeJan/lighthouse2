@@ -6,13 +6,39 @@ namespace lh2core {
 
 class AABB {
 public:
-    float3 minBounds, maxBounds;
+    float3 minBounds =
+        make_float3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+    float3 maxBounds =
+        make_float3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+
     AABB(float3 minBounds, float3 maxBounds) : minBounds(minBounds), maxBounds(maxBounds) {}
     AABB() = default;
 };
 
+
+class Bin{
+public:
+    AABB bounds;
+    int count = 0;
+    vector<uint> primIndices;
+    float cost;
+    
+	Bin() = default;
+
+	void addPrim(uint primIndex) {
+        count++;
+        primIndices.push_back(primIndex);
+	}
+    void evaluateBounds();
+    AABB evaluateGetBounds();
+};
+
 class Node {
     int leftFirst;
+
+    void partition();
+    void binnedPartition();
+    void convertNode(vector<uint> left, AABB leftAABB, vector<uint> right, AABB rightAABB);
 
 public:
     int count;
@@ -53,7 +79,7 @@ public:
 
     void subdivide();
 
-    void partition();
+   
 };
 
 class Mesh;
