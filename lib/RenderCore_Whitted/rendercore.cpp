@@ -111,8 +111,8 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
 
 /* Now plot all pixels to the screen from the buffer. */
 #pragma omp parallel for
-    for (int y = 0; y < screen->height; y++) {
-        for (int x = 0; x < screen->width; x++) {
+    for (uint y = 0; y < screen->height; y++) {
+        for (uint x = 0; x < screen->width; x++) {
             float4 accColor = accBuffer.at(size_t(y) * screen->width + x);
             float3 endColor = make_float3(accColor);
 

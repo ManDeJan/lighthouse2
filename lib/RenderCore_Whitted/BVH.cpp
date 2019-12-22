@@ -109,7 +109,7 @@ void Node::partition() {
 
             if (primCenter.x < primSplitCenter.x) splitLeft.push_back(indexj);
             else
-                bestSplitRight.push_back(indexj);
+                splitRight.push_back(indexj);
         }
 
         //calculate cost on X
@@ -135,7 +135,7 @@ void Node::partition() {
 
             if (primCenter.y < primSplitCenter.y) splitLeft.push_back(indexj);
             else
-                bestSplitRight.push_back(indexj);
+                splitRight.push_back(indexj);
         }
 
         //calculate cost on Y
@@ -161,7 +161,7 @@ void Node::partition() {
 
             if (primCenter.z < primSplitCenter.z) splitLeft.push_back(indexj);
             else
-                bestSplitRight.push_back(indexj);
+                splitRight.push_back(indexj);
         }
 
         //calculate cost on Z
