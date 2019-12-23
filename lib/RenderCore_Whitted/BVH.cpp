@@ -5,9 +5,9 @@
 namespace lh2core {
 
 Node *BVH::root;
-vector<Node> BVH::nodes;
+vector<Node> alignas(128) BVH::nodes;
 size_t BVH::nodeIndex;
-vector<uint> BVH::indices;
+vector<uint> alignas(128) BVH::indices;
 vector<CoreTri> BVH::primitives;
 
 float3 triangleCenter(CoreTri &tri) {
@@ -59,6 +59,7 @@ void BVH::constructBVH() {
     // create index array
 
     size_t N = primitives.size();
+    print("Constructing BVH, size ", N);
     indices.resize(N);
     for (size_t i = 0; i < N; i++) indices[i] = i;
     // allocate BVH root node
@@ -66,6 +67,7 @@ void BVH::constructBVH() {
     nodes.resize(N * 2 - 1);
     nodeIndex = 0;
     root = &nodes[0];
+    print("Indices Build BVH");
     // subdivide root node
     root->setFirst(0);
     root->setCount(N);
@@ -74,14 +76,17 @@ void BVH::constructBVH() {
 }
 
 void BVH::setMesh(Mesh &mesh) {
-    primitives = vector<CoreTri>(mesh.triangles, mesh.triangles + mesh.vcount / 3);
+    auto a = vector<CoreTri>(mesh.triangles, mesh.triangles + mesh.vcount / 3);
+    primitives.insert(primitives.end(), a.begin(), a.end());
 }
 
+int split_count = 0;
+
 void Node::subdivide() {
+    print("split: ", ++split_count);
     if (count < 3) return;
 
-    partition();
-
+    binnedPartition();
     BVH::nodeIndex += 2;
     BVH::nodes[left()].subdivide();
     BVH::nodes[right()].subdivide();
@@ -94,6 +99,7 @@ void Node::partition() {
     AABB bestBSL, bestBSR;
 
     for (int i = 0; i < count; i++) {
+        // if (!(i % 1000)) print("Partitioning: ", i);
         CoreTri primSplit = BVH::primitives[BVH::indices[first() + i]];
         float3 primSplitCenter = triangleCenter(primSplit);
 
@@ -186,7 +192,9 @@ void Node::convertNode(vector<uint> left, AABB leftAABB, vector<uint> right, AAB
     BVH::nodes[BVH::nodeIndex + 1] = Node(first(), left.size(), leftAABB);
 
     //create right node
-    for (size_t i = 0; i < right.size(); i++) BVH::indices[first() + left.size() + i] = right[i];
+    for (size_t i = 0; i < right.size(); i++) {
+        BVH::indices[first() + left.size() + i] = right[i];
+    }
     BVH::nodes[BVH::nodeIndex + 2] = Node(first() + left.size(), right.size(), rightAABB);
 
     //setLeftNode and set to parent node
@@ -217,7 +225,7 @@ AABB Bin::evaluateGetBounds() {
 
 void Node::binnedPartition() {
 	//16 bins along widest axis
-    const int nBins = 16;
+    constexpr int nBins = 16;
     Bin bins[nBins];
     float interval;
     float k1, k0;
@@ -252,7 +260,7 @@ void Node::binnedPartition() {
             int binId = k1 * (primCenter - k0);
             bins[binId].addPrim(indexi);
         }
-	} else{//dim z
+	} else { //dim z
         interval = dim.z / nBins;
         k0 = bounds.minBounds.z;
         k1 = (nBins - EPSILON) / dim.z;
@@ -267,7 +275,6 @@ void Node::binnedPartition() {
         }
 	}
 
-
 	Bin leftBins[nBins]; //aggregation of bins
     
 	bins[0].evaluateBounds();
@@ -275,7 +282,7 @@ void Node::binnedPartition() {
     leftBins[0].cost = calculateRawSAH(leftBins[0].bounds) * leftBins[0].count;
 
 	//evaluateBounds for each bin and sweep from left
-    for (int i = 1; i++;i<nBins) { 
+    for (int i = 1; i < nBins; i++) { 
         Bin &a = leftBins[i - 1];	//previous aggregated bins
         Bin &b = leftBins[i];		//current bin to be calculated
         Bin &bin = bins[i];			//bin to be added to current bin
@@ -295,7 +302,7 @@ void Node::binnedPartition() {
     rightBins[ii].cost = calculateRawSAH(rightBins[ii].bounds) * rightBins[ii].count;
 
     //evaluateBounds for each bin and sweep from right
-    for (int i = 1; i++; i < nBins) {
+    for (int i = 1; i < nBins; i++) {
         Bin &a = rightBins[ii - i + 1];	//previous aggregated bins
         Bin &b = rightBins[ii - i];		//current bin to be calculated
         Bin &bin = bins[ii - i];		//bin to be added to current bin
@@ -312,7 +319,7 @@ void Node::binnedPartition() {
     Bin bestLeft;
 	Bin bestRight;
 
-	for (int i = 0; i++; i < nBins - 1) { 
+	for (int i = 0; i < nBins - 1; i++) { 
 		Bin &left = leftBins[i];
         Bin &right = rightBins[i];
 		float totalCost = left.cost + right.cost;

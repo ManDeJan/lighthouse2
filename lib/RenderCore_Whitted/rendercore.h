@@ -24,7 +24,7 @@ class Intersection {
 public:
     CoreTri *triangle;
     float3 location;
-    float distance = UINT_MAX;
+    float distance = numeric_limits<float>::max();
 };
 
 enum class MaterialType { DIELECTRIC, MIRROR, DIFFUSE, LIGHT };
@@ -49,7 +49,7 @@ public:
     }
 
     // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
-    float calcIntersectDist(CoreTri &tri) {
+    float calcIntersectDist(CoreTri &tri) const {
         float3 v0v1 = tri.vertex1 - tri.vertex0;
         float3 v0v2 = tri.vertex2 - tri.vertex0;
         float3 pvec = cross(direction, v0v2);
@@ -113,7 +113,10 @@ public:
     void Shutdown();
     // internal methods
 private:
-    Intersection getNearestIntersection(Ray ray);
+    Intersection getNearestIntersection(Ray &ray);
+    Intersection getNearestIntersectionBVH(Ray &ray);
+    Intersection traverseBVH(const Ray &ray, const Node &node, Intersection &inter);
+    bool intersectNode(const Ray &ray, const Node &node, float &t);
     float3 calcRayColor(Ray ray, uint depth);
     bool existNearerIntersection(Ray ray, float distance);
     float3 calcLightContributions(float3 mColor, float3 iPoint, float3 triangleN, float closestIntersection);
@@ -128,7 +131,7 @@ private:
     vector<CoreDirectionalLight> dirLights; // directional light storage
     vector<CoreSpotLight> spotLights;       // spotlight storage
     vector<CoreLightTri> areaLights;        // arealight storage
-    BVH bvh;
+    BVH bvh;                       // BVH storage
 
     // Store skydata
     vector<float3> skyData;

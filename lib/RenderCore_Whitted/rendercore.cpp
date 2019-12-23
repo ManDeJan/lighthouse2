@@ -13,8 +13,9 @@
    limitations under the License.
 */
 
-#include "core_settings.h"
 #include "rendercore.h"
+
+#include "core_settings.h"
 
 using namespace lh2core;
 
@@ -64,8 +65,8 @@ void RenderCore::SetGeometry(const int meshIdx,
     newMesh.triangles = new CoreTri[vertexCount / 3];
     memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
     meshes.push_back(newMesh);
-    bvh.setMesh(newMesh);
-    bvh.constructBVH();
+    bvh.setMesh(meshes.back());
+    // print("new mesh added");
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -73,7 +74,14 @@ void RenderCore::SetGeometry(const int meshIdx,
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
-    constexpr float noise_probability = 0.3f; // To increase speed, we only shoot a primary ray for 10% of the pixels.
+    static bool rebuild_bvh = true;
+    if (rebuild_bvh) {
+        print("Building BVH");
+        bvh.constructBVH();
+        print("Done BVH");
+        rebuild_bvh = false;
+    }
+    constexpr float noise_probability = 0.03f; // To increase speed, we only shoot a primary ray for 10% of the pixels.
 
     // If camera moved, clear the screen and the accumulator buffer.
     if (converge == Restart) {
@@ -100,7 +108,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                 float3 direction = normalize(view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1) - view.pos);
 
                 Ray primaryRay(view.pos, direction);
-                Intersection i = getNearestIntersection(primaryRay); // duplicate nearest intersection?? Zie calcRayColor
+                // Intersection i = getNearestIntersection(primaryRay); // duplicate nearest intersection?? Zie calcRayColor
 
                 // Calculate color and store in accumulator buffer.
                 float3 pixelColor = calcRayColor(primaryRay, 0);
@@ -149,10 +157,10 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
 float3 RenderCore::calcRayColor(Ray ray, uint depth) {
     constexpr uint max_depth = 5; // Maximum recursion depth for each ray.
     constexpr float ambient_light = 0.01f;
-    Intersection i = getNearestIntersection(ray);
+    Intersection i = getNearestIntersectionBVH(ray);
 
     /* If we missed, get the skybox color. */
-    if (i.distance >= UINT_MAX) {
+    if (i.distance >= numeric_limits<float>::max()) {
         // http://gl.ict.usc.edu/Data/HighResProbes/
         float u = 1 + atan2f(ray.direction.x, -ray.direction.z) * INVPI;
         float v = acosf(ray.direction.y) * INVPI;
@@ -339,7 +347,7 @@ RenderCore::calcLightContributions(float3 mColor, float3 iLocation, float3 trian
 //  |  RenderCore::existNearerIntersection                                        |
 //  |  Get the nearest intersection with a primitive for the given ray.		LH2'19|
 //  +-----------------------------------------------------------------------------+
-Intersection RenderCore::getNearestIntersection(Ray ray) {
+Intersection RenderCore::getNearestIntersection(Ray &ray) {
     Intersection i = Intersection();
 
     for (Mesh &mesh : meshes) {
@@ -355,6 +363,96 @@ Intersection RenderCore::getNearestIntersection(Ray ray) {
         }
     }
     return i;
+}
+
+bool RenderCore::intersectNode(const Ray &ray, const Node &node, float &t) {
+    float3 dir_frac = make_float3(0, 0, 0);
+
+    dir_frac.x = 1.0f / ray.direction.x;
+    dir_frac.y = 1.0f / ray.direction.y;
+    dir_frac.z = 1.0f / ray.direction.z;
+
+    float t1 = (node.bounds.minBounds.x - ray.origin.x) * dir_frac.x;
+    float t2 = (node.bounds.maxBounds.x - ray.origin.x) * dir_frac.x;
+    float t3 = (node.bounds.minBounds.y - ray.origin.y) * dir_frac.y;
+    float t4 = (node.bounds.maxBounds.y - ray.origin.y) * dir_frac.y;
+    float t5 = (node.bounds.minBounds.z - ray.origin.z) * dir_frac.z;
+    float t6 = (node.bounds.maxBounds.z - ray.origin.z) * dir_frac.z;
+
+    float t_min = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+    float t_max = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+    if (t_max < 0) {
+        t = t_max;
+        return false;
+    }
+
+    if (t_min > t_max) {
+        t = t_max;
+        return false;
+    }
+
+    t = t_min;
+    return true;
+}
+
+Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersection &inter) {
+
+    if (node.isLeaf()) {
+        for (int i = 0; i < node.first() + node.count; i++) {
+            float t = ray.calcIntersectDist(BVH::primitives[BVH::indices[i]]);
+            if (t < inter.distance && t > 0) {
+                inter.distance = t;
+                inter.triangle = &BVH::primitives[BVH::indices[i]];
+                inter.location = ray.origin + ray.direction * inter.distance;
+            }
+        }
+    } else /* if the node is not a leaf */ {
+        float t_left  = numeric_limits<float>::max();
+        float t_right = numeric_limits<float>::max();
+
+        bool intersects_left  = intersectNode(ray, BVH::nodes[node.left()], t_left);
+        bool intersects_right = intersectNode(ray, BVH::nodes[node.right()], t_right);
+        
+        if (intersects_left && intersects_right) {
+            if (t_left < t_right) {
+                    traverseBVH(ray, BVH::nodes[node.left()], inter);
+                    traverseBVH(ray, BVH::nodes[node.right()], inter);
+            } else {
+                    traverseBVH(ray, BVH::nodes[node.right()], inter);
+                    traverseBVH(ray, BVH::nodes[node.left()], inter);
+            }
+        } else if (intersects_left) {
+            traverseBVH(ray, BVH::nodes[node.left()], inter);
+        } else if (intersects_right) {
+            traverseBVH(ray, BVH::nodes[node.right()], inter);
+        }
+
+        // if (intersectNode(ray, BVH::nodes[node.left()], t_left))
+        //     if (intersectNode(ray, BVH::nodes[node.right()], t_right))
+        //         if (t_left < t_right) {
+        //             traverseBVH(ray, BVH::nodes[node.left()], inter);
+        //             traverseBVH(ray, BVH::nodes[node.right()], inter);
+        //         } else {
+        //             traverseBVH(ray, BVH::nodes[node.right()], inter);
+        //             traverseBVH(ray, BVH::nodes[node.left()], inter);
+        //         }
+        //     else
+        //         traverseBVH(ray, BVH::nodes[node.left()], inter);
+        // else if (intersectNode(ray, BVH::nodes[node.right()], t_right))
+        //     traverseBVH(ray, BVH::nodes[node.right()], inter);
+    }
+
+    return inter;
+}
+
+//  +-----------------------------------------------------------------------------+
+//  |  RenderCore::existNearerIntersection                                        |
+//  |  Get the nearest intersection with a primitive for the given ray.		LH2'19|
+//  +-----------------------------------------------------------------------------+
+Intersection RenderCore::getNearestIntersectionBVH(Ray &ray) {
+    auto i = Intersection();
+    return traverseBVH(ray, *bvh.root, i);
 }
 
 //  +-----------------------------------------------------------------------------+

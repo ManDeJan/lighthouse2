@@ -16,7 +16,7 @@ public:
 };
 
 
-class Bin{
+class Bin {
 public:
     AABB bounds;
     int count = 0;
@@ -55,13 +55,13 @@ public:
     void setLeft(int left) {
         leftFirst = left;
     }
-    int first() {
+    int first() const {
         return leftFirst;
     }
-    int left() {
+    int left() const {
         return leftFirst;
     }
-    int right() {
+    int right() const {
         return leftFirst + 1;
     }
 
@@ -73,13 +73,11 @@ public:
         this->bounds = bounds;
     }
 
-    bool isLeaf() {
+    bool isLeaf() const {
         return count;
     }
 
-    void subdivide();
-
-   
+    void subdivide();   
 };
 
 class Mesh;
