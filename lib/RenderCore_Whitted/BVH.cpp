@@ -233,10 +233,10 @@ void Node::binnedPartition() {
 	float3 dim = bounds.maxBounds - bounds.minBounds;
 	
 	//Populate bins
-	if (dim.x >= dim.y && dim.x >= dim.z){ 
+	if (dim.x >= dim.y && dim.x >= dim.z) { 
 		interval = dim.x / nBins;
         k0 = bounds.minBounds.x;
-        k1 = (nBins - EPSILON)/ dim.x;
+        k1 = (nBins - EPSILON) / dim.x;
 
 		for (int i = 0; i < count; i++) {
             uint indexi = BVH::indices[first() + i];
@@ -247,7 +247,7 @@ void Node::binnedPartition() {
             bins[binId].addPrim(indexi);
 		}
 
-	} else if (dim.y >= dim.x && dim.y >= dim.z){
+	} else if (dim.y >= dim.x && dim.y >= dim.z) {
         interval = dim.y / nBins;
         k0 = bounds.minBounds.y;
         k1 = (nBins - EPSILON) / dim.y;
@@ -320,8 +320,8 @@ void Node::binnedPartition() {
 	Bin bestRight;
 
 	for (int i = 0; i < nBins - 1; i++) { 
-		Bin &left = leftBins[i];
-        Bin &right = rightBins[i];
+		Bin &left  = leftBins[i];
+        Bin &right = rightBins[i + 1];
 		float totalCost = left.cost + right.cost;
 		if (totalCost < optimalCost) { 
 			optimalCost = totalCost;
@@ -329,71 +329,82 @@ void Node::binnedPartition() {
             bestRight = right;
 		}
 	}
+    if (bestLeft.count + bestRight.count > BVH::indices.size()) {
+        for (auto i : bestLeft.primIndices) {
+            for (auto j : bestRight.primIndices) {
+                if (i == j) print("double: ", i);
+            }
+        }
+        print("CHAOS HELP ", bestLeft.count + bestRight.count, " ", BVH::indices.size());
+    } else {
+        print("yay? ", bestLeft.count + bestRight.count, " ", BVH::indices.size());
+    }
+    
     convertNode(bestLeft.primIndices, bestLeft.bounds, bestRight.primIndices, bestRight.bounds);
 }
 
-bool rayBoxIntersection(const Ray& r, const AABB& box) {
-	// https: //gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
-	float3 lb = box.minBounds;
-    float3 rt = box.maxBounds;
+// bool rayBoxIntersection(const Ray& r, const AABB& box) {
+// 	// https: //gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+// 	float3 lb = box.minBounds;
+//     float3 rt = box.maxBounds;
 
-    float3 dirfrac;
-    // r.dir is unit direction vector of ray
-    dirfrac.x = 1.0f / r.direction.x;
-    dirfrac.y = 1.0f / r.direction.y;
-    dirfrac.z = 1.0f / r.direction.z;
-    // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
-    // r.org is origin of ray
-    float t1 = (lb.x - r.origin.x) * dirfrac.x;
-    float t2 = (rt.x - r.origin.x) * dirfrac.x;
-    float t3 = (lb.y - r.origin.y) * dirfrac.y;
-    float t4 = (rt.y - r.origin.y) * dirfrac.y;
-    float t5 = (lb.z - r.origin.z) * dirfrac.z;
-    float t6 = (rt.z - r.origin.z) * dirfrac.z;
+//     float3 dirfrac;
+//     // r.dir is unit direction vector of ray
+//     dirfrac.x = 1.0f / r.direction.x;
+//     dirfrac.y = 1.0f / r.direction.y;
+//     dirfrac.z = 1.0f / r.direction.z;
+//     // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+//     // r.org is origin of ray
+//     float t1 = (lb.x - r.origin.x) * dirfrac.x;
+//     float t2 = (rt.x - r.origin.x) * dirfrac.x;
+//     float t3 = (lb.y - r.origin.y) * dirfrac.y;
+//     float t4 = (rt.y - r.origin.y) * dirfrac.y;
+//     float t5 = (lb.z - r.origin.z) * dirfrac.z;
+//     float t6 = (rt.z - r.origin.z) * dirfrac.z;
 
-    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+//     float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+//     float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
-    // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-    if (tmax < 0) {
-        //outcommented t, I don't think we need to return t for the bounding box right?
-        //t = tmax;
-        return false;
-    }
+//     // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+//     if (tmax < 0) {
+//         //outcommented t, I don't think we need to return t for the bounding box right?
+//         //t = tmax;
+//         return false;
+//     }
 
-    // if tmin > tmax, ray doesn't intersect AABB
-    if (tmin > tmax) {
-        //t = tmax;
-        return false;
-    }
+//     // if tmin > tmax, ray doesn't intersect AABB
+//     if (tmin > tmax) {
+//         //t = tmax;
+//         return false;
+//     }
 
-    //t = tmin;
-    return true;
-}
+//     //t = tmin;
+//     return true;
+// }
 
-//WHAT DO WE RETURN? AN Intersection??
-Intersection BVHIntersection(Ray &r, Node &n) {
-    if (rayBoxIntersection(r, n.bounds)) {
-        if (n.isLeaf()) {
-            Intersection j;
-            for (size_t i = 0; i < n.count; i++) {
-                size_t index = i + n.count;
-                CoreTri &triangle = BVH::primitives[BVH::indices[index]];
+// //WHAT DO WE RETURN? AN Intersection??
+// Intersection BVHIntersection(Ray &r, Node &n) {
+//     if (rayBoxIntersection(r, n.bounds)) {
+//         if (n.isLeaf()) {
+//             Intersection j;
+//             for (size_t i = 0; i < n.count; i++) {
+//                 size_t index = i + n.count;
+//                 CoreTri &triangle = BVH::primitives[BVH::indices[index]];
 
-                //INTERSECT TRIANGLE
-                float t = r.calcIntersectDist(triangle);
-                if (t < j.distance && t > 0) {
-                    j.distance = t;
-                    j.triangle = &triangle;
-                    j.location = r.origin + r.direction * j.distance;
-                }
-            }
-            return j;
-        } else {
-            //intersect left and right
-            BVHIntersection(r, BVH::nodes[n.left()]);
-            BVHIntersection(r, BVH::nodes[n.right()]);
-        }
-    }
-}
+//                 //INTERSECT TRIANGLE
+//                 float t = r.calcIntersectDist(triangle);
+//                 if (t < j.distance && t > 0) {
+//                     j.distance = t;
+//                     j.triangle = &triangle;
+//                     j.location = r.origin + r.direction * j.distance;
+//                 }
+//             }
+//             return j;
+//         } else {
+//             //intersect left and right
+//             BVHIntersection(r, BVH::nodes[n.left()]);
+//             BVHIntersection(r, BVH::nodes[n.right()]);
+//         }
+//     }
+// }
 } // namespace lh2core
