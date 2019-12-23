@@ -229,16 +229,14 @@ void Node::binnedPartition() {
 	//16 bins along widest axis
     constexpr int nBins = 16;
     Bin bins[nBins];
-    float interval;
     float k1, k0;
 
 	float3 dim = bounds.maxBounds - bounds.minBounds;
 	
 	//Populate bins
-	if (dim.x >= dim.y && dim.x >= dim.z) { 
-		interval = dim.x / nBins;
+	if (dim.x >= dim.y && dim.x >= dim.z) {
         k0 = bounds.minBounds.x;
-        k1 = (nBins - EPSILON) / dim.x;
+        k1 = (nBins * (1 - EPSILON)) / dim.x;
 
 		for (int i = 0; i < count; i++) {
             uint indexi = BVH::indices[first() + i];
@@ -250,9 +248,8 @@ void Node::binnedPartition() {
 		}
 
 	} else if (dim.y >= dim.x && dim.y >= dim.z) {
-        interval = dim.y / nBins;
         k0 = bounds.minBounds.y;
-        k1 = (nBins - EPSILON) / dim.y;
+        k1 = (nBins * (1 - EPSILON)) / dim.y;
 
         for (int i = 0; i < count; i++) {
             uint indexi = BVH::indices[first() + i];
@@ -262,10 +259,9 @@ void Node::binnedPartition() {
             int binId = k1 * (primCenter - k0);
             bins[binId].addPrim(indexi);
         }
-	} else { //dim z
-        interval = dim.z / nBins;
+	} else /* z dim is largest */ {
         k0 = bounds.minBounds.z;
-        k1 = (nBins - EPSILON) / dim.z;
+        k1 = (nBins * (1 - EPSILON)) / dim.z;
 
         for (int i = 0; i < count; i++) {
             uint indexi = BVH::indices[first() + i];

@@ -90,8 +90,16 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         print("Building BVH");
         bvh.constructBVH();
         print("Done BVH");
+        print("BVH size ", bvh.nodes.size());
         for (auto &node : bvh.nodes) {
-            print("alle_noten ", node.left(), " ", node.right());
+            if (node.isLeaf()) {
+                print("BLAD! : ", node.count, " ", node.first());
+            } else {
+                print("TAK!  : ", node.left());
+            }
+        }
+        for (auto &idx : bvh.indices) {
+            print("alle_idx ", idx);
         }
         // printBVH(*bvh.root);
         rebuild_bvh = false;
