@@ -5,9 +5,9 @@
 namespace lh2core {
 
 Node *BVH::root;
-vector<Node> alignas(128) BVH::nodes;
+vector<Node> BVH::nodes;
 size_t BVH::nodeIndex;
-vector<uint> alignas(128) BVH::indices;
+vector<uint> BVH::indices;
 vector<CoreTri> BVH::primitives;
 
 float3 triangleCenter(CoreTri &tri) {
