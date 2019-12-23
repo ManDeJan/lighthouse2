@@ -64,7 +64,7 @@ void PrepareScene() {
     renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));
 #endif
     // classic scene
-    // // materialFile = string("data/pica/pica_materials.xml");
+    // materialFile = string("data/pica/pica_materials.xml");
     // renderer->AddScene("AnimatedCube.gltf", "data/animatedCube/", mat4::Translate(0, -10.2f, 0));
     // int rootNode = renderer->FindNode("RootNode (gltf orientation matrix)");
     // renderer->SetNodeTransform(rootNode, mat4::RotateX(-PI / 2));

@@ -69,6 +69,17 @@ void RenderCore::SetGeometry(const int meshIdx,
     // print("new mesh added");
 }
 
+void printBVH(Node &node) {
+	if (node.isLeaf())
+		cout << "[" << node.count << "]";
+	else {
+		cout << "[";
+		printBVH(BVH::nodes[node.left()]);
+		printBVH(BVH::nodes[node.right()]);
+		cout << "]";
+	}
+}
+
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
@@ -79,6 +90,10 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         print("Building BVH");
         bvh.constructBVH();
         print("Done BVH");
+        for (auto &node : bvh.nodes) {
+            print("alle_noten ", node.left(), " ", node.right());
+        }
+        // printBVH(*bvh.root);
         rebuild_bvh = false;
     }
     constexpr float noise_probability = 0.03f; // To increase speed, we only shoot a primary ray for 10% of the pixels.
@@ -396,10 +411,14 @@ bool RenderCore::intersectNode(const Ray &ray, const Node &node, float &t) {
     return true;
 }
 
+int traverseBVHcount = 0;
+
 Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersection &inter) {
 
+    // print("Traversal: ", ++traverseBVHcount);
+
     if (node.isLeaf()) {
-        for (int i = 0; i < node.first() + node.count; i++) {
+        for (int i = node.first(); i < node.first() + node.count; i++) {
             float t = ray.calcIntersectDist(BVH::primitives[BVH::indices[i]]);
             if (t < inter.distance && t > 0) {
                 inter.distance = t;

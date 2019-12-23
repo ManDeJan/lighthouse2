@@ -27,6 +27,9 @@ AABB calculateBounds(const vector<uint> &indices) {
     float3 maxBounds =
         make_float3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
 
+    // float3 minBounds = make_float3(0, 0, 0);
+    // float3 maxBounds = make_float3(0, 0, 0);
+
     //calculate bounds
     for (uint index : indices) {
         CoreTri &primitive = BVH::primitives[index];
@@ -65,8 +68,8 @@ void BVH::constructBVH() {
     // allocate BVH root node
     nodes.clear();
     nodes.resize(N * 2 - 1);
-    nodeIndex = 0;
     root = &nodes[0];
+    nodeIndex = 0;
     print("Indices Build BVH");
     // subdivide root node
     root->setFirst(0);
@@ -87,6 +90,7 @@ void Node::subdivide() {
     if (count < 3) return;
 
     binnedPartition();
+    print("noot indeks", BVH::nodeIndex);
     BVH::nodeIndex += 2;
     BVH::nodes[left()].subdivide();
     BVH::nodes[right()].subdivide();
@@ -203,16 +207,14 @@ void Node::convertNode(vector<uint> left, AABB leftAABB, vector<uint> right, AAB
 }
 
 AABB mergeBounds(AABB a, AABB b) {
-    float3 min, max;
-    min.x = a.minBounds.x > b.minBounds.x ? a.minBounds.x : b.minBounds.x;
-    min.y = a.minBounds.y > b.minBounds.y ? a.minBounds.y : b.minBounds.y;
-    min.z = a.minBounds.z > b.minBounds.z ? a.minBounds.z : b.minBounds.z;
-
-	
-    max.x = a.maxBounds.x > b.maxBounds.x ? a.maxBounds.x : b.maxBounds.x;
-    max.y = a.maxBounds.y > b.maxBounds.y ? a.maxBounds.y : b.maxBounds.y;
-    max.z = a.maxBounds.z > b.maxBounds.z ? a.maxBounds.z : b.maxBounds.z;
-    return (AABB(min, max));
+    float3 min_bounds, max_bounds;
+    min_bounds.x = min(a.minBounds.x, b.minBounds.x); // ? a.minBounds.x : b.minBounds.x;
+    min_bounds.y = min(a.minBounds.y, b.minBounds.y); // ? a.minBounds.y : b.minBounds.y;
+    min_bounds.z = min(a.minBounds.z, b.minBounds.z); // ? a.minBounds.z : b.minBounds.z;
+    max_bounds.x = max(a.maxBounds.x, b.maxBounds.x); // ? a.maxBounds.x : b.maxBounds.x;
+    max_bounds.y = max(a.maxBounds.y, b.maxBounds.y); // ? a.maxBounds.y : b.maxBounds.y;
+    max_bounds.z = max(a.maxBounds.z, b.maxBounds.z); // ? a.maxBounds.z : b.maxBounds.z;
+    return (AABB(min_bounds, max_bounds));
 }
 
 
@@ -314,6 +316,13 @@ void Node::binnedPartition() {
         b.cost = calculateRawSAH(b.bounds) * b.count;
     }
 
+    // for (auto blin : leftBins) {
+    //     print("Leftbin: ", blin.count);
+    // }
+    // for (auto blin : rightBins) {
+    //     print("Rightbin: ", blin.count);
+    // }
+
 	//find optimal split
 	float optimalCost = numeric_limits<float>::max();
     Bin bestLeft;
@@ -323,22 +332,26 @@ void Node::binnedPartition() {
 		Bin &left  = leftBins[i];
         Bin &right = rightBins[i + 1];
 		float totalCost = left.cost + right.cost;
+        // print("left count: ", left.count, " right count: ", right.count);
+        // print("left cost : ", left.cost , " right cost : ", right.cost );
 		if (totalCost < optimalCost) { 
 			optimalCost = totalCost;
             bestLeft = left;
             bestRight = right;
 		}
 	}
-    if (bestLeft.count + bestRight.count > BVH::indices.size()) {
-        for (auto i : bestLeft.primIndices) {
-            for (auto j : bestRight.primIndices) {
-                if (i == j) print("double: ", i);
-            }
-        }
-        print("CHAOS HELP ", bestLeft.count + bestRight.count, " ", BVH::indices.size());
-    } else {
-        print("yay? ", bestLeft.count + bestRight.count, " ", BVH::indices.size());
-    }
+    // print("bestleft count: ", bestLeft.count, " bestright count: ", bestRight.count);
+
+    // if (bestLeft.count + bestRight.count > BVH::indices.size()) {
+    //     for (auto i : bestLeft.primIndices) {
+    //         for (auto j : bestRight.primIndices) {
+    //             if (i == j) print("double: ", i);
+    //         }
+    //     }
+    //     print("CHAOS HELP ", bestLeft.count + bestRight.count, " ", BVH::indices.size());
+    // } else {
+    //     print("yay? ", bestLeft.count + bestRight.count, " ", BVH::indices.size());
+    // }
     
     convertNode(bestLeft.primIndices, bestLeft.bounds, bestRight.primIndices, bestRight.bounds);
 }
