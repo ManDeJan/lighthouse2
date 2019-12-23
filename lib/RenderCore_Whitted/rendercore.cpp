@@ -13,9 +13,10 @@
    limitations under the License.
 */
 
+#include "core_settings.h"
 #include "rendercore.h"
 
-#include "core_settings.h"
+
 
 using namespace lh2core;
 
