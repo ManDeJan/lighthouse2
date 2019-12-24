@@ -69,16 +69,6 @@ void RenderCore::SetGeometry(const int meshIdx,
     // print("new mesh added");
 }
 
-void printBVH(Node &node) {
-	if (node.isLeaf())
-		cout << "[" << node.count << "]";
-	else {
-		cout << "[";
-		printBVH(BVH::nodes[node.left()]);
-		printBVH(BVH::nodes[node.right()]);
-		cout << "]";
-	}
-}
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Render                                                         |
@@ -90,17 +80,17 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         print("Building BVH");
         bvh.constructBVH();
         print("Done BVH");
-        print("BVH size ", bvh.nodes.size());
-        for (auto &node : bvh.nodes) {
-            if (node.isLeaf()) {
-                print("BLAD! : ", node.count, " ", node.first());
-            } else {
-                print("TAK!  : ", node.left());
-            }
-        }
-        for (auto &idx : bvh.indices) {
-            print("alle_idx ", idx);
-        }
+        // print("BVH size ", bvh.nodes.size());
+        // for (auto &node : bvh.nodes) {
+        //     if (node.isLeaf()) {
+        //         print("BLAD! : ", node.count, " ", node.first());
+        //     } else {
+        //         print("TAK!  : ", node.left());
+        //     }
+        // }
+        // for (auto &idx : bvh.indices) {
+        //     print("alle_idx ", idx);
+        // }
         // printBVH(*bvh.root);
         rebuild_bvh = false;
     }
