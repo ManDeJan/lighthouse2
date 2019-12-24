@@ -42,6 +42,25 @@ AABB calculateBounds(const vector<uint> &indices) {
     return AABB(minBounds, maxBounds);
 }
 
+//AABB calculateCentroidBounds(const vector<uint> &indices) {
+AABB calculateCentroidBounds(int first, int count) {
+    float3 minBounds =
+        make_float3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+    float3 maxBounds =
+        make_float3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+
+    //calculate bounds
+    for (int i = 0; i < count; i++) {
+        CoreTri &primitive = BVH::primitives[BVH::indices[first + i]];
+
+		float3 primCenter = triangleCenter(primitive);
+
+        minBounds = fminf(minBounds, primCenter);
+        maxBounds = fmaxf(maxBounds, primCenter);
+    }
+    return AABB(minBounds, maxBounds);
+}
+
 // AABB BVH::calculateBounds(int first, int count) {
 //     float3 minBounds = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
 //     float3 maxBounds = make_float3(FLT_MIN, FLT_MIN, FLT_MIN);
@@ -110,7 +129,7 @@ void Node::subdivide() {
     //     }
     // }
 
-    if (count <= 4) return;
+    if (count <= 3) return;
 
     binnedPartition();
     // print("noot indeks", BVH::nodeIndex);
@@ -251,15 +270,25 @@ AABB Bin::evaluateGetBounds() {
 
 void Node::binnedPartition() {
 	//16 bins along widest axis
-    constexpr int nBins = 16;
+    constexpr int nBins = 8;
     Bin bins[nBins];
     float k1, k0;
 
+<<<<<<< HEAD
 	float3 dim = bounds.maxBounds - bounds.minBounds;
 	
 	//Populate bins
 	if (dim.x >= dim.y && dim.x >= dim.z) {
         k0 = bounds.minBounds.x;
+=======
+	AABB cBounds = calculateCentroidBounds(first(),count);
+	float3 dim = cBounds.maxBounds - cBounds.minBounds;
+
+	
+	//Populate bins
+	if (dim.x >= dim.y && dim.x >= dim.z) {
+        k0 = cBounds.minBounds.x;
+>>>>>>> shadow-bvh
         k1 = (nBins * (1 - EPSILON)) / dim.x;
 
 		for (int i = 0; i < count; i++) {
@@ -268,11 +297,16 @@ void Node::binnedPartition() {
             float primCenter = triangleCenter(prim).x;
 
 			int binId = k1 * (primCenter - k0);
+			//print ("binId: ", binId, " k1: ", k1, "primcenter", primCenter, "k0", k0);
             bins[binId].addPrim(indexi);
 		}
 
 	} else if (dim.y >= dim.x && dim.y >= dim.z) {
+<<<<<<< HEAD
         k0 = bounds.minBounds.y;
+=======
+        k0 = cBounds.minBounds.y;
+>>>>>>> shadow-bvh
         k1 = (nBins * (1 - EPSILON)) / dim.y;
 
         for (int i = 0; i < count; i++) {
@@ -284,7 +318,11 @@ void Node::binnedPartition() {
             bins[binId].addPrim(indexi);
         }
 	} else /* z dim is largest */ {
+<<<<<<< HEAD
         k0 = bounds.minBounds.z;
+=======
+        k0 = cBounds.minBounds.z;
+>>>>>>> shadow-bvh
         k1 = (nBins * (1 - EPSILON)) / dim.z;
 
         for (int i = 0; i < count; i++) {
@@ -311,6 +349,10 @@ void Node::binnedPartition() {
 
 		b.primIndices = a.primIndices;
         b.primIndices.insert(b.primIndices.end(), bin.primIndices.begin(), bin.primIndices.end());
+<<<<<<< HEAD
+=======
+       // print("a bounds: min(", a.bounds.minBounds.x, ") b bounds: minx: ", b.bounds.minBounds.x);
+>>>>>>> shadow-bvh
         b.bounds = mergeBounds(a.bounds, bin.evaluateGetBounds());
         b.count = a.count + bin.count;
         b.cost = calculateRawSAH(b.bounds) * b.count;
@@ -363,7 +405,11 @@ void Node::binnedPartition() {
 		}
 	}
 
-    if (!split_worthwile) return;
+    if (!split_worthwile) {
+        print("not worth it.. ", count);
+        return;
+    };
+
     // print("bestleft count: ", bestLeft.count, " bestright count: ", bestRight.count);
 
     // if (bestLeft.count + bestRight.count > BVH::indices.size()) {

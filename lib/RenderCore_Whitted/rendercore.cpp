@@ -17,7 +17,6 @@
 #include "rendercore.h"
 
 
-
 using namespace lh2core;
 
 //  +-----------------------------------------------------------------------------+
@@ -95,7 +94,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         // printBVH(*bvh.root);
         rebuild_bvh = false;
     }
-    constexpr float noise_probability = 0.03f; // To increase speed, we only shoot a primary ray for 10% of the pixels.
+    constexpr float noise_probability = 0.1f; // To increase speed, we only shoot a primary ray for 10% of the pixels.
 
     // If camera moved, clear the screen and the accumulator buffer.
     if (converge == Restart) {
@@ -445,27 +444,13 @@ Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersect
         } else if (intersects_right) {
             traverseBVH(ray, BVH::nodes[node.right()], inter);
         }
-
-        // if (intersectNode(ray, BVH::nodes[node.left()], t_left))
-        //     if (intersectNode(ray, BVH::nodes[node.right()], t_right))
-        //         if (t_left < t_right) {
-        //             traverseBVH(ray, BVH::nodes[node.left()], inter);
-        //             traverseBVH(ray, BVH::nodes[node.right()], inter);
-        //         } else {
-        //             traverseBVH(ray, BVH::nodes[node.right()], inter);
-        //             traverseBVH(ray, BVH::nodes[node.left()], inter);
-        //         }
-        //     else
-        //         traverseBVH(ray, BVH::nodes[node.left()], inter);
-        // else if (intersectNode(ray, BVH::nodes[node.right()], t_right))
-        //     traverseBVH(ray, BVH::nodes[node.right()], inter);
     }
 
     return inter;
 }
 
 //  +-----------------------------------------------------------------------------+
-//  |  RenderCore::existNearerIntersection                                        |
+//  |  RenderCore::getNearestIntersectionBVH                                        |
 //  |  Get the nearest intersection with a primitive for the given ray.		LH2'19|
 //  +-----------------------------------------------------------------------------+
 Intersection RenderCore::getNearestIntersectionBVH(Ray &ray) {
@@ -479,13 +464,14 @@ Intersection RenderCore::getNearestIntersectionBVH(Ray &ray) {
 //	|  given ray that is at least epsilon closer than the given distance.   LH2'19|
 //  +-----------------------------------------------------------------------------+
 bool RenderCore::existNearerIntersection(Ray ray, float distance) {
-    for (Mesh &mesh : meshes) {
-        for (uint triangleIdx = 0; triangleIdx < mesh.vcount / 3; triangleIdx++) {
-            float t = ray.calcIntersectDist(mesh.triangles[triangleIdx]);
-            if (t < distance + EPSILON) { return true; }
-        }
-    }
-    return false;
+    // for (Mesh &mesh : meshes) {
+    //     for (uint triangleIdx = 0; triangleIdx < mesh.vcount / 3; triangleIdx++) {
+    //         float t = ray.calcIntersectDist(mesh.triangles[triangleIdx]);
+    //         if (t < distance + EPSILON) { return true; }
+    //     }
+    // }
+    // return false;
+    return getNearestIntersectionBVH(ray).distance < distance;
 }
 
 //  +-----------------------------------------------------------------------------+
