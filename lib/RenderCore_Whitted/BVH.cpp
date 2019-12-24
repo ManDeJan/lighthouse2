@@ -103,15 +103,39 @@ void BVH::setMesh(Mesh &mesh) {
 
 int split_count = 0;
 
+void printBVH(Node &node) {
+	if (node.isLeaf())
+		cout << "[" << node.count << "]";
+	else {
+		cout << "[";
+		printBVH(BVH::nodes[node.left()]);
+		printBVH(BVH::nodes[node.right()]);
+		cout << "]";
+	}
+}
+
 void Node::subdivide() {
-    print("split: ", ++split_count);
-    if (count < 3) return;
+
+    // print("\n\nsplit: ", ++split_count);
+    // printBVH(*BVH::root);
+    // print();
+    // int i = 0;
+    // for (auto &node : BVH::nodes) {
+    //     if (node.isLeaf()) {
+    //         print(i++, " BLAD! : ", node.count, " ", node.first());
+    //     } else {
+    //         print(i++, " TAK!  : ", node.left());
+    //     }
+    // }
+
+    if (count <= 4) return;
 
     binnedPartition();
-    print("noot indeks", BVH::nodeIndex);
+    // print("noot indeks", BVH::nodeIndex);
     BVH::nodeIndex += 2;
     BVH::nodes[left()].subdivide();
     BVH::nodes[right()].subdivide();
+    
 }
 
 
@@ -344,6 +368,7 @@ void Node::binnedPartition() {
 	float optimalCost = numeric_limits<float>::max();
     Bin bestLeft;
 	Bin bestRight;
+    bool split_worthwile = false;
 
 	for (int i = 0; i < nBins - 1; i++) { 
 		Bin &left  = leftBins[i];
@@ -351,7 +376,8 @@ void Node::binnedPartition() {
 		float totalCost = left.cost + right.cost;
         // print("left count: ", left.count, " right count: ", right.count);
         // print("left cost : ", left.cost , " right cost : ", right.cost );
-		if (totalCost < optimalCost) { 
+		if (totalCost < optimalCost) {
+            split_worthwile = true;
 			optimalCost = totalCost;
             left.evaluateBounds();
             right.evaluateBounds();
@@ -359,6 +385,8 @@ void Node::binnedPartition() {
             bestRight = right;
 		}
 	}
+
+    if (!split_worthwile) return;
     // print("bestleft count: ", bestLeft.count, " bestright count: ", bestRight.count);
 
     // if (bestLeft.count + bestRight.count > BVH::indices.size()) {
