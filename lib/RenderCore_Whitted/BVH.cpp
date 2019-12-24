@@ -5,9 +5,9 @@
 namespace lh2core {
 
 Node *BVH::root;
-vector<Node> alignas(128) BVH::nodes;
+vector<Node> BVH::nodes;
 size_t BVH::nodeIndex;
-vector<uint> alignas(128) BVH::indices;
+vector<uint> BVH::indices;
 vector<CoreTri> BVH::primitives;
 
 float3 triangleCenter(CoreTri &tri) {
@@ -41,6 +41,24 @@ AABB calculateBounds(const vector<uint> &indices) {
     }
     return AABB(minBounds, maxBounds);
 }
+AABB calculateCentroidBounds(const vector<uint> &indices) {
+    float3 minBounds =
+        make_float3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+    float3 maxBounds =
+        make_float3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+
+    //calculate bounds
+    for (uint index : indices) {
+        CoreTri &primitive = BVH::primitives[index];
+
+		float3 primCenter = triangleCenter(primitive);
+
+        minBounds = fminf(minBounds, primCenter);
+        maxBounds = fmaxf(maxBounds, primCenter);
+    }
+    return AABB(minBounds, maxBounds);
+}
+
 
 // AABB BVH::calculateBounds(int first, int count) {
 //     float3 minBounds = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
@@ -243,10 +261,10 @@ AABB mergeBounds(AABB a, AABB b) {
 
 
 void Bin::evaluateBounds() {
-    bounds = calculateBounds(primIndices);
+    bounds = calculateCentroidBounds(primIndices);
 }
 AABB Bin::evaluateGetBounds() {
-    return bounds = calculateBounds(primIndices);
+    return bounds = calculateCentroidBounds(primIndices);
 }
 
 void Node::binnedPartition() {
