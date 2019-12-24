@@ -5,9 +5,9 @@
 namespace lh2core {
 
 Node *BVH::root;
-vector<Node> alignas(128) BVH::nodes;
+vector<Node> BVH::nodes;
 size_t BVH::nodeIndex;
-vector<uint> alignas(128) BVH::indices;
+vector<uint> BVH::indices;
 vector<CoreTri> BVH::primitives;
 
 float3 triangleCenter(CoreTri &tri) {
@@ -38,6 +38,25 @@ AABB calculateBounds(const vector<uint> &indices) {
 
         minBounds = fminf(minBounds, primMin);
         maxBounds = fmaxf(maxBounds, primMax);
+    }
+    return AABB(minBounds, maxBounds);
+}
+
+//AABB calculateCentroidBounds(const vector<uint> &indices) {
+AABB calculateCentroidBounds(int first, int count) {
+    float3 minBounds =
+        make_float3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+    float3 maxBounds =
+        make_float3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+
+    //calculate bounds
+    for (int i = 0; i < count; i++) {
+        CoreTri &primitive = BVH::primitives[BVH::indices[first + i]];
+
+		float3 primCenter = triangleCenter(primitive);
+
+        minBounds = fminf(minBounds, primCenter);
+        maxBounds = fmaxf(maxBounds, primCenter);
     }
     return AABB(minBounds, maxBounds);
 }
@@ -255,11 +274,13 @@ void Node::binnedPartition() {
     Bin bins[nBins];
     float k1, k0;
 
-	float3 dim = bounds.maxBounds - bounds.minBounds;
+	AABB cBounds = calculateCentroidBounds(first(),count);
+	float3 dim = cBounds.maxBounds - cBounds.minBounds;
+
 	
 	//Populate bins
 	if (dim.x >= dim.y && dim.x >= dim.z) {
-        k0 = bounds.minBounds.x;
+        k0 = cBounds.minBounds.x;
         k1 = (nBins * (1 - EPSILON)) / dim.x;
 
 		for (int i = 0; i < count; i++) {
@@ -268,11 +289,12 @@ void Node::binnedPartition() {
             float primCenter = triangleCenter(prim).x;
 
 			int binId = k1 * (primCenter - k0);
+			//print ("binId: ", binId, " k1: ", k1, "primcenter", primCenter, "k0", k0);
             bins[binId].addPrim(indexi);
 		}
 
 	} else if (dim.y >= dim.x && dim.y >= dim.z) {
-        k0 = bounds.minBounds.y;
+        k0 = cBounds.minBounds.y;
         k1 = (nBins * (1 - EPSILON)) / dim.y;
 
         for (int i = 0; i < count; i++) {
@@ -284,7 +306,7 @@ void Node::binnedPartition() {
             bins[binId].addPrim(indexi);
         }
 	} else /* z dim is largest */ {
-        k0 = bounds.minBounds.z;
+        k0 = cBounds.minBounds.z;
         k1 = (nBins * (1 - EPSILON)) / dim.z;
 
         for (int i = 0; i < count; i++) {
@@ -311,6 +333,7 @@ void Node::binnedPartition() {
 
 		b.primIndices = a.primIndices;
         b.primIndices.insert(b.primIndices.end(), bin.primIndices.begin(), bin.primIndices.end());
+       // print("a bounds: min(", a.bounds.minBounds.x, ") b bounds: minx: ", b.bounds.minBounds.x);
         b.bounds = mergeBounds(a.bounds, bin.evaluateGetBounds());
         b.count = a.count + bin.count;
         b.cost = calculateRawSAH(b.bounds) * b.count;
