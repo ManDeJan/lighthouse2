@@ -260,14 +260,11 @@ AABB mergeBounds(AABB a, AABB b) {
 }
 
 
-void Bin::evaluateCBounds() {
-    centroidBounds = calculateCentroidBounds(primIndices);
-}
-AABB Bin::evaluateGetCBounds() {
-    return centroidBounds = calculateCentroidBounds(primIndices);
-}
 void Bin::evaluateBounds() {
-    centroidBounds = calculateCentroidBounds(primIndices);
+    bounds = calculateCentroidBounds(primIndices);
+}
+AABB Bin::evaluateGetBounds() {
+    return bounds = calculateCentroidBounds(primIndices);
 }
 
 void Node::binnedPartition() {
@@ -320,9 +317,9 @@ void Node::binnedPartition() {
 
 	Bin leftBins[nBins]; //aggregation of bins
     
-	bins[0].evaluateCBounds();
+	bins[0].evaluateBounds();
 	leftBins[0] = bins[0];
-    leftBins[0].cost = calculateRawSAH(leftBins[0].centroidBounds) * leftBins[0].count;
+    leftBins[0].cost = calculateRawSAH(leftBins[0].bounds) * leftBins[0].count;
 
 	//evaluateBounds for each bin and sweep from left
     for (int i = 1; i < nBins; i++) { 
@@ -332,17 +329,17 @@ void Node::binnedPartition() {
 
 		b.primIndices = a.primIndices;
         b.primIndices.insert(b.primIndices.end(), bin.primIndices.begin(), bin.primIndices.end());
-        b.centroidBounds = mergeBounds(a.centroidBounds, bin.evaluateGetCBounds());
+        b.bounds = mergeBounds(a.bounds, bin.evaluateGetBounds());
         b.count = a.count + bin.count;
-        b.cost = calculateRawSAH(b.centroidBounds) * b.count;
+        b.cost = calculateRawSAH(b.bounds) * b.count;
 	}
 
     
 	Bin rightBins[nBins]; //aggregation of bins
     int ii = nBins - 1;
-    bins[ii].evaluateCBounds();
+    bins[ii].evaluateBounds();
     rightBins[ii] = bins[ii];
-    rightBins[ii].cost = calculateRawSAH(rightBins[ii].centroidBounds) * rightBins[ii].count;
+    rightBins[ii].cost = calculateRawSAH(rightBins[ii].bounds) * rightBins[ii].count;
 
     //evaluateBounds for each bin and sweep from right
     for (int i = 1; i < nBins; i++) {
@@ -352,9 +349,9 @@ void Node::binnedPartition() {
 
         b.primIndices = a.primIndices;
         b.primIndices.insert(b.primIndices.end(), bin.primIndices.begin(), bin.primIndices.end());
-        b.centroidBounds = mergeBounds(a.centroidBounds, bin.evaluateGetCBounds());
+        b.bounds = mergeBounds(a.bounds, bin.evaluateGetBounds());
         b.count = a.count + bin.count;
-        b.cost = calculateRawSAH(b.centroidBounds) * b.count;
+        b.cost = calculateRawSAH(b.bounds) * b.count;
     }
 
     // for (auto blin : leftBins) {
@@ -379,8 +376,6 @@ void Node::binnedPartition() {
 		if (totalCost < optimalCost) {
             split_worthwile = true;
 			optimalCost = totalCost;
-            left.evaluateBounds();
-            right.evaluateBounds();
             bestLeft = left;
             bestRight = right;
 		}

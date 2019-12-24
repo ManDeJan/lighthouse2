@@ -18,7 +18,7 @@ public:
 
 class Bin {
 public:
-    AABB centroidBounds, bounds;
+    AABB bounds;
     int count = 0;
     vector<uint> primIndices;
     float cost;
@@ -29,9 +29,8 @@ public:
         count++;
         primIndices.push_back(primIndex);
 	}
-    void evaluateCBounds();
     void evaluateBounds();
-    AABB evaluateGetCBounds();
+    AABB evaluateGetBounds();
 };
 
 class Node {
