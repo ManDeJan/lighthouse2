@@ -18,6 +18,8 @@
 
 using namespace lh2core;
 
+constexpr bool bvh_visualization = false;
+
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Init                                                           |
 //  |  Initialization.                                                      LH2'19|
@@ -79,7 +81,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
     float dy = 1.0f / (ny - 1);
     //print(">>> Start");
 
-    float abs_min = numeric_limits<float>::max(), abs_max = numeric_limits<float>::min();
+    float abs_min = numeric_limits<float>::max(), abs_max = -numeric_limits<float>::max();
 
     for (int y = 0; y < ny; y++) {
         for (int x = 0; x < nx; x++) {

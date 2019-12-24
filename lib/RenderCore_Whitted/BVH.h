@@ -9,7 +9,7 @@ public:
     float3 minBounds =
         make_float3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
     float3 maxBounds =
-        make_float3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+        make_float3(-numeric_limits<float>::max(), -numeric_limits<float>::max(), -numeric_limits<float>::max());
 
     AABB(float3 minBounds, float3 maxBounds) : minBounds(minBounds), maxBounds(maxBounds) {}
     AABB() = default;

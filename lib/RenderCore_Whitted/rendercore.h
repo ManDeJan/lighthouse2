@@ -20,11 +20,11 @@
 
 namespace lh2core {
     
-class Intersection {
-public:
+struct Intersection {
     CoreTri *triangle;
     float3 location;
     float distance = numeric_limits<float>::max();
+    uint intersections_count = 0;
 };
 
 enum class MaterialType { DIELECTRIC, MIRROR, DIFFUSE, LIGHT };

@@ -16,6 +16,7 @@
 #include "core_settings.h"
 #include "rendercore.h"
 
+constexpr bool bvh_visualization = false;
 
 using namespace lh2core;
 
@@ -70,6 +71,7 @@ void RenderCore::SetGeometry(const int meshIdx,
 }
 
 
+uint max_inter_count = 0;
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
@@ -94,7 +96,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         // printBVH(*bvh.root);
         rebuild_bvh = false;
     }
-    constexpr float noise_probability = 0.1f; // To increase speed, we only shoot a primary ray for 10% of the pixels.
+    constexpr float noise_probability = 0.01f; // To increase speed, we only shoot a primary ray for 10% of the pixels.
 
     // If camera moved, clear the screen and the accumulator buffer.
     if (converge == Restart) {
@@ -113,8 +115,8 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
             // Draw noisy to increase speed
             float plotPixel = Rand(1);
 
-            if (plotPixel < noise_probability) {
-                // if (true) {
+            // if (plotPixel < noise_probability) {
+            if (true) {
                 // Anti-aliasing: shoot the ray through a random position inside the pixel.
                 float v = (y + Rand(1)) / (float)screen->height;
                 float u = (x + Rand(1)) / (float)screen->width;
@@ -163,14 +165,20 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
     print("frame time: ", int(time_span.count() * 1000), " ms");
-
+    print("max_inter_count:", max_inter_count);
     //printf("Render finished \n");
 }
 
+
 float3 RenderCore::calcRayColor(Ray ray, uint depth) {
     constexpr uint max_depth = 5; // Maximum recursion depth for each ray.
-    constexpr float ambient_light = 0.01f;
+    constexpr float ambient_light = 0.04f;
     Intersection i = getNearestIntersectionBVH(ray);
+
+    if (bvh_visualization) {
+        max_inter_count = max(max_inter_count, i.intersections_count);
+        return make_float3(i.intersections_count / float(max_inter_count));
+    }
 
     /* If we missed, get the skybox color. */
     if (i.distance >= numeric_limits<float>::max()) {
@@ -409,14 +417,13 @@ bool RenderCore::intersectNode(const Ray &ray, const Node &node, float &t) {
     return true;
 }
 
-int traverseBVHcount = 0;
 
 Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersection &inter) {
 
     // print("Traversal: ", ++traverseBVHcount);
-
     if (node.isLeaf()) {
         for (int i = node.first(); i < node.first() + node.count; i++) {
+            inter.intersections_count++;
             float t = ray.calcIntersectDist(BVH::primitives[BVH::indices[i]]);
             if (t < inter.distance && t > 0) {
                 inter.distance = t;
@@ -425,6 +432,7 @@ Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersect
             }
         }
     } else /* if the node is not a leaf */ {
+        inter.intersections_count++;
         float t_left  = numeric_limits<float>::max();
         float t_right = numeric_limits<float>::max();
 

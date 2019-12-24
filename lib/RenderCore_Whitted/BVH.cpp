@@ -16,7 +16,6 @@ float3 triangleCenter(CoreTri &tri) {
 
 float calculateRawSAH(AABB bounds) {//not including the number of primitves
     float3 box = bounds.maxBounds - bounds.minBounds;
-    //return BVH::indices.size() * (2 * box.x * box.y + 2 * box.y * box.z + 2 * box.z * box.x);
     return (2 * box.x * box.y + 2 * box.y * box.z + 2 * box.z * box.x);
 }
 
@@ -25,7 +24,7 @@ AABB calculateBounds(const vector<uint> &indices) {
     float3 minBounds =
         make_float3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
     float3 maxBounds =
-        make_float3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+        make_float3(-numeric_limits<float>::max(), -numeric_limits<float>::max(), -numeric_limits<float>::max());
 
     // float3 minBounds = make_float3(0, 0, 0);
     // float3 maxBounds = make_float3(0, 0, 0);
@@ -47,7 +46,7 @@ AABB calculateCentroidBounds(int first, int count) {
     float3 minBounds =
         make_float3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
     float3 maxBounds =
-        make_float3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+        make_float3(-numeric_limits<float>::max(), -numeric_limits<float>::max(), -numeric_limits<float>::max());
 
     //calculate bounds
     for (int i = 0; i < count; i++) {
@@ -60,22 +59,6 @@ AABB calculateCentroidBounds(int first, int count) {
     }
     return AABB(minBounds, maxBounds);
 }
-
-// AABB BVH::calculateBounds(int first, int count) {
-//     float3 minBounds = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
-//     float3 maxBounds = make_float3(FLT_MIN, FLT_MIN, FLT_MIN);
-//     //somehow calculate bounds based on the primitves
-//     for (int i = first; i <= count; i++) {
-//         CoreTri &primitive = BVH::primitives[indices[i]];
-//         float3 primMin = fminf(fminf(primitive.vertex0, primitive.vertex1), primitive.vertex2);
-//         float3 primMax = fmaxf(fmaxf(primitive.vertex0, primitive.vertex1), primitive.vertex2);
-
-//         minBounds = fminf(minBounds, primMin);
-//         maxBounds = fmaxf(maxBounds, primMax);
-//     }
-//     return AABB(minBounds, maxBounds);
-// }
-
 
 void BVH::constructBVH() {
     // create index array
@@ -116,19 +99,6 @@ void printBVH(Node &node) {
 }
 
 void Node::subdivide() {
-
-    // print("\n\nsplit: ", ++split_count);
-    // printBVH(*BVH::root);
-    // print();
-    // int i = 0;
-    // for (auto &node : BVH::nodes) {
-    //     if (node.isLeaf()) {
-    //         print(i++, " BLAD! : ", node.count, " ", node.first());
-    //     } else {
-    //         print(i++, " TAK!  : ", node.left());
-    //     }
-    // }
-
     if (count <= 3) return;
 
     binnedPartition();
@@ -270,25 +240,17 @@ AABB Bin::evaluateGetBounds() {
 
 void Node::binnedPartition() {
 	//16 bins along widest axis
-    constexpr int nBins = 8;
+    constexpr int nBins = 16;
     Bin bins[nBins];
     float k1, k0;
 
-<<<<<<< HEAD
-	float3 dim = bounds.maxBounds - bounds.minBounds;
-	
-	//Populate bins
-	if (dim.x >= dim.y && dim.x >= dim.z) {
-        k0 = bounds.minBounds.x;
-=======
-	AABB cBounds = calculateCentroidBounds(first(),count);
+	AABB cBounds = calculateCentroidBounds(first(), count);
 	float3 dim = cBounds.maxBounds - cBounds.minBounds;
 
 	
 	//Populate bins
 	if (dim.x >= dim.y && dim.x >= dim.z) {
         k0 = cBounds.minBounds.x;
->>>>>>> shadow-bvh
         k1 = (nBins * (1 - EPSILON)) / dim.x;
 
 		for (int i = 0; i < count; i++) {
@@ -302,11 +264,7 @@ void Node::binnedPartition() {
 		}
 
 	} else if (dim.y >= dim.x && dim.y >= dim.z) {
-<<<<<<< HEAD
-        k0 = bounds.minBounds.y;
-=======
         k0 = cBounds.minBounds.y;
->>>>>>> shadow-bvh
         k1 = (nBins * (1 - EPSILON)) / dim.y;
 
         for (int i = 0; i < count; i++) {
@@ -318,11 +276,7 @@ void Node::binnedPartition() {
             bins[binId].addPrim(indexi);
         }
 	} else /* z dim is largest */ {
-<<<<<<< HEAD
-        k0 = bounds.minBounds.z;
-=======
         k0 = cBounds.minBounds.z;
->>>>>>> shadow-bvh
         k1 = (nBins * (1 - EPSILON)) / dim.z;
 
         for (int i = 0; i < count; i++) {
@@ -349,10 +303,7 @@ void Node::binnedPartition() {
 
 		b.primIndices = a.primIndices;
         b.primIndices.insert(b.primIndices.end(), bin.primIndices.begin(), bin.primIndices.end());
-<<<<<<< HEAD
-=======
        // print("a bounds: min(", a.bounds.minBounds.x, ") b bounds: minx: ", b.bounds.minBounds.x);
->>>>>>> shadow-bvh
         b.bounds = mergeBounds(a.bounds, bin.evaluateGetBounds());
         b.count = a.count + bin.count;
         b.cost = calculateRawSAH(b.bounds) * b.count;
@@ -406,88 +357,9 @@ void Node::binnedPartition() {
 	}
 
     if (!split_worthwile) {
-        print("not worth it.. ", count);
         return;
     };
-
-    // print("bestleft count: ", bestLeft.count, " bestright count: ", bestRight.count);
-
-    // if (bestLeft.count + bestRight.count > BVH::indices.size()) {
-    //     for (auto i : bestLeft.primIndices) {
-    //         for (auto j : bestRight.primIndices) {
-    //             if (i == j) print("double: ", i);
-    //         }
-    //     }
-    //     print("CHAOS HELP ", bestLeft.count + bestRight.count, " ", BVH::indices.size());
-    // } else {
-    //     print("yay? ", bestLeft.count + bestRight.count, " ", BVH::indices.size());
-    // }
     
     convertNode(bestLeft.primIndices, bestLeft.bounds, bestRight.primIndices, bestRight.bounds);
 }
-
-// bool rayBoxIntersection(const Ray& r, const AABB& box) {
-// 	// https: //gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
-// 	float3 lb = box.minBounds;
-//     float3 rt = box.maxBounds;
-
-//     float3 dirfrac;
-//     // r.dir is unit direction vector of ray
-//     dirfrac.x = 1.0f / r.direction.x;
-//     dirfrac.y = 1.0f / r.direction.y;
-//     dirfrac.z = 1.0f / r.direction.z;
-//     // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
-//     // r.org is origin of ray
-//     float t1 = (lb.x - r.origin.x) * dirfrac.x;
-//     float t2 = (rt.x - r.origin.x) * dirfrac.x;
-//     float t3 = (lb.y - r.origin.y) * dirfrac.y;
-//     float t4 = (rt.y - r.origin.y) * dirfrac.y;
-//     float t5 = (lb.z - r.origin.z) * dirfrac.z;
-//     float t6 = (rt.z - r.origin.z) * dirfrac.z;
-
-//     float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-//     float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-
-//     // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-//     if (tmax < 0) {
-//         //outcommented t, I don't think we need to return t for the bounding box right?
-//         //t = tmax;
-//         return false;
-//     }
-
-//     // if tmin > tmax, ray doesn't intersect AABB
-//     if (tmin > tmax) {
-//         //t = tmax;
-//         return false;
-//     }
-
-//     //t = tmin;
-//     return true;
-// }
-
-// //WHAT DO WE RETURN? AN Intersection??
-// Intersection BVHIntersection(Ray &r, Node &n) {
-//     if (rayBoxIntersection(r, n.bounds)) {
-//         if (n.isLeaf()) {
-//             Intersection j;
-//             for (size_t i = 0; i < n.count; i++) {
-//                 size_t index = i + n.count;
-//                 CoreTri &triangle = BVH::primitives[BVH::indices[index]];
-
-//                 //INTERSECT TRIANGLE
-//                 float t = r.calcIntersectDist(triangle);
-//                 if (t < j.distance && t > 0) {
-//                     j.distance = t;
-//                     j.triangle = &triangle;
-//                     j.location = r.origin + r.direction * j.distance;
-//                 }
-//             }
-//             return j;
-//         } else {
-//             //intersect left and right
-//             BVHIntersection(r, BVH::nodes[n.left()]);
-//             BVHIntersection(r, BVH::nodes[n.right()]);
-//         }
-//     }
-// }
-} // namespace lh2core
+}
