@@ -128,7 +128,7 @@ void Node::subdivide() {
     //     }
     // }
 
-    if (count <= 4) return;
+    if (count <= 3) return;
 
     binnedPartition();
     // print("noot indeks", BVH::nodeIndex);
@@ -269,7 +269,7 @@ AABB Bin::evaluateGetBounds() {
 
 void Node::binnedPartition() {
 	//16 bins along widest axis
-    constexpr int nBins = 16;
+    constexpr int nBins = 8;
     Bin bins[nBins];
     float k1, k0;
 
@@ -381,7 +381,11 @@ void Node::binnedPartition() {
 		}
 	}
 
-    if (!split_worthwile) return;
+    if (!split_worthwile) {
+        print("not worth it.. ", count);
+        return;
+    };
+
     // print("bestleft count: ", bestLeft.count, " bestright count: ", bestRight.count);
 
     // if (bestLeft.count + bestRight.count > BVH::indices.size()) {
