@@ -58,23 +58,6 @@ AABB calculateCentroidBounds(const vector<uint> &indices) {
     }
     return AABB(minBounds, maxBounds);
 }
-AABB calculateCentroidBounds(uint first, uint count) {
-    float3 minBounds =
-        make_float3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
-    float3 maxBounds =
-        make_float3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
-
-    //calculate bounds
-    for (int i = first; i < first + count;i++) {
-        CoreTri &primitive = BVH::primitives[i];
-
-        float3 primCenter = triangleCenter(primitive);
-
-        minBounds = fminf(minBounds, primCenter);
-        maxBounds = fmaxf(maxBounds, primCenter);
-    }
-    return AABB(minBounds, maxBounds);
-}
 
 
 // AABB BVH::calculateBounds(int first, int count) {
@@ -284,7 +267,7 @@ AABB Bin::evaluateGetCBounds() {
     return centroidBounds = calculateCentroidBounds(primIndices);
 }
 void Bin::evaluateBounds() {
-    bounds = calculateBounds(primIndices);
+    centroidBounds = calculateCentroidBounds(primIndices);
 }
 
 void Node::binnedPartition() {
@@ -293,12 +276,11 @@ void Node::binnedPartition() {
     Bin bins[nBins];
     float k1, k0;
 
-	AABB cbounds = calculateCentroidBounds(first(), count);
-	float3 dim = cbounds.maxBounds - cbounds.minBounds;
+	float3 dim = bounds.maxBounds - bounds.minBounds;
 	
 	//Populate bins
 	if (dim.x >= dim.y && dim.x >= dim.z) {
-        k0 = cbounds.minBounds.x;
+        k0 = bounds.minBounds.x;
         k1 = (nBins * (1 - EPSILON)) / dim.x;
 
 		for (int i = 0; i < count; i++) {
@@ -311,7 +293,7 @@ void Node::binnedPartition() {
 		}
 
 	} else if (dim.y >= dim.x && dim.y >= dim.z) {
-        k0 = cbounds.minBounds.y;
+        k0 = bounds.minBounds.y;
         k1 = (nBins * (1 - EPSILON)) / dim.y;
 
         for (int i = 0; i < count; i++) {
@@ -323,7 +305,7 @@ void Node::binnedPartition() {
             bins[binId].addPrim(indexi);
         }
 	} else /* z dim is largest */ {
-        k0 = cbounds.minBounds.z;
+        k0 = bounds.minBounds.z;
         k1 = (nBins * (1 - EPSILON)) / dim.z;
 
         for (int i = 0; i < count; i++) {
