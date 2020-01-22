@@ -17,8 +17,11 @@
 #include "rendercore.h"
 
 constexpr bool bvh_visualization = false;
+constexpr bool bvh4 = true;
 
 using namespace lh2core;
+
+
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Init                                                           |
@@ -82,7 +85,8 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         print("Building BVH");
         bvh.constructBVH();
         print("Done BVH");
-        bvh.convertBVH4();
+        if (bvh4)
+			bvh.convertBVH4();
         // print("BVH size ", bvh.nodes.size());
         // for (auto &node : bvh.nodes) {
         //     if (node.isLeaf()) {
@@ -433,26 +437,66 @@ Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersect
             }
         }
     } else /* if the node is not a leaf */ {
-        inter.intersections_count++;
-        float t_left  = numeric_limits<float>::max();
-        float t_right = numeric_limits<float>::max();
 
-        bool intersects_left  = intersectNode(ray, BVH::nodes[node.left()], t_left);
-        bool intersects_right = intersectNode(ray, BVH::nodes[node.right()], t_right);
-        
-        if (intersects_left && intersects_right) {
-            if (t_left < t_right) {
-                    traverseBVH(ray, BVH::nodes[node.left()], inter);
-                    traverseBVH(ray, BVH::nodes[node.right()], inter);
-            } else {
-                    traverseBVH(ray, BVH::nodes[node.right()], inter);
-                    traverseBVH(ray, BVH::nodes[node.left()], inter);
+		if (bvh4) {
+            inter.intersections_count++;
+
+			int childCount = node.childCount();
+			vector<float> t(childCount, numeric_limits<float>::max());
+            vector<bool> intersections;
+
+			//print("traversing");
+
+			for (int i = 0; i < childCount; i++) { 
+				intersections.push_back(intersectNode(ray, BVH::nodes[node.left()+i], t[i]));
+               // print("intersecting");
+			}
+
+			for (int i = 0; i < childCount; i++) { 
+				if (intersections[i])
+					traverseBVH(ray, BVH::nodes[node.left() + i], inter);
             }
-        } else if (intersects_left) {
-            traverseBVH(ray, BVH::nodes[node.left()], inter);
-        } else if (intersects_right) {
-            traverseBVH(ray, BVH::nodes[node.right()], inter);
-        }
+
+
+           /* bool intersects_left = intersectNode(ray, BVH::nodes[node.], t1);
+            bool intersects_right = intersectNode(ray, BVH::nodes[node.right()], t2);
+
+            if (intersects_left && intersects_right) {
+                if (t1 < t2) {
+                    traverseBVH(ray, BVH::nodes[node.left()], inter);
+                    traverseBVH(ray, BVH::nodes[node.right()], inter);
+                } else {
+                    traverseBVH(ray, BVH::nodes[node.right()], inter);
+                    traverseBVH(ray, BVH::nodes[node.left()], inter);
+                }
+            } else if (intersects_left) {
+                traverseBVH(ray, BVH::nodes[node.left()], inter);
+            } else if (intersects_right) {
+                traverseBVH(ray, BVH::nodes[node.right()], inter);
+            }*/
+        } else {
+            //print("bvh2");
+			inter.intersections_count++;
+			float t_left  = numeric_limits<float>::max();
+			float t_right = numeric_limits<float>::max();
+
+			bool intersects_left  = intersectNode(ray, BVH::nodes[node.left()], t_left);
+			bool intersects_right = intersectNode(ray, BVH::nodes[node.right()], t_right);
+        
+			if (intersects_left && intersects_right) {
+				if (t_left < t_right) {
+						traverseBVH(ray, BVH::nodes[node.left()], inter);
+						traverseBVH(ray, BVH::nodes[node.right()], inter);
+				} else {
+						traverseBVH(ray, BVH::nodes[node.right()], inter);
+						traverseBVH(ray, BVH::nodes[node.left()], inter);
+				}
+			} else if (intersects_left) {
+				traverseBVH(ray, BVH::nodes[node.left()], inter);
+			} else if (intersects_right) {
+				traverseBVH(ray, BVH::nodes[node.right()], inter);
+			}
+		}
     }
 
     return inter;

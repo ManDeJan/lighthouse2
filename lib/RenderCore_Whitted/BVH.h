@@ -72,9 +72,14 @@ public:
     void setBounds(AABB bounds) {
         this->bounds = bounds;
     }
-
     bool isLeaf() const {
-        return count;
+        return count > 0;
+    }
+	void setChildCount(int count) {
+        this->count = -count;
+	}
+    int childCount() const {
+        return abs(count);
     }
 
     void subdivide();   

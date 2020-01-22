@@ -400,6 +400,7 @@ void BVH::tranformBVH4Node(Node node, vector<Node> &nodes2) {
 
     //reorder nodes
     node.setLeft(BVH::nodeIndex + 1);
+    node.setChildCount(newChilds.size());
 
     for (Node n : newChilds) { 
 		BVH::nodes[++nodeIndex] = n;
