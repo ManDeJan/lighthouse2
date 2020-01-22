@@ -14,11 +14,10 @@ float3 triangleCenter(CoreTri &tri) {
     return (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 }
 
-float calculateRawSAH(AABB bounds) {//not including the number of primitves
+float calculateRawSAH(AABB bounds) { //not including the number of primitves
     float3 box = bounds.maxBounds - bounds.minBounds;
     return (2 * box.x * box.y + 2 * box.y * box.z + 2 * box.z * box.x);
 }
-
 
 AABB calculateBounds(const vector<uint> &indices) {
     float3 minBounds =
@@ -52,7 +51,7 @@ AABB calculateCentroidBounds(int first, int count) {
     for (int i = 0; i < count; i++) {
         CoreTri &primitive = BVH::primitives[BVH::indices[first + i]];
 
-		float3 primCenter = triangleCenter(primitive);
+        float3 primCenter = triangleCenter(primitive);
 
         minBounds = fminf(minBounds, primCenter);
         maxBounds = fmaxf(maxBounds, primCenter);
@@ -88,14 +87,13 @@ void BVH::setMesh(Mesh &mesh) {
 int split_count = 0;
 
 void printBVH(Node &node) {
-	if (node.isLeaf())
-		cout << "[" << node.count << "]";
-	else {
-		cout << "[";
-		printBVH(BVH::nodes[node.left()]);
-		printBVH(BVH::nodes[node.right()]);
-		cout << "]";
-	}
+    if (node.isLeaf()) cout << "[" << node.count << "]";
+    else {
+        cout << "[";
+        printBVH(BVH::nodes[node.left()]);
+        printBVH(BVH::nodes[node.right()]);
+        cout << "]";
+    }
 }
 
 void Node::subdivide() {
@@ -106,9 +104,7 @@ void Node::subdivide() {
     BVH::nodeIndex += 2;
     BVH::nodes[left()].subdivide();
     BVH::nodes[right()].subdivide();
-    
 }
-
 
 void Node::partition() {
     float bestSplitCost = numeric_limits<float>::max();
@@ -200,7 +196,7 @@ void Node::partition() {
         }
     }
 
-	convertNode(bestSplitLeft, bestBSL, bestSplitRight, bestBSR);
+    convertNode(bestSplitLeft, bestBSL, bestSplitRight, bestBSR);
 }
 
 void Node::convertNode(vector<uint> left, AABB leftAABB, vector<uint> right, AABB rightAABB) {
@@ -209,9 +205,7 @@ void Node::convertNode(vector<uint> left, AABB leftAABB, vector<uint> right, AAB
     BVH::nodes[BVH::nodeIndex + 1] = Node(first(), left.size(), leftAABB);
 
     //create right node
-    for (size_t i = 0; i < right.size(); i++) {
-        BVH::indices[first() + left.size() + i] = right[i];
-    }
+    for (size_t i = 0; i < right.size(); i++) { BVH::indices[first() + left.size() + i] = right[i]; }
     BVH::nodes[BVH::nodeIndex + 2] = Node(first() + left.size(), right.size(), rightAABB);
 
     //setLeftNode and set to parent node
@@ -221,15 +215,14 @@ void Node::convertNode(vector<uint> left, AABB leftAABB, vector<uint> right, AAB
 
 AABB mergeBounds(AABB a, AABB b) {
     float3 min_bounds, max_bounds;
-    min_bounds.x = min(a.minBounds.x, b.minBounds.x); // ? a.minBounds.x : b.minBounds.x;
-    min_bounds.y = min(a.minBounds.y, b.minBounds.y); // ? a.minBounds.y : b.minBounds.y;
-    min_bounds.z = min(a.minBounds.z, b.minBounds.z); // ? a.minBounds.z : b.minBounds.z;
-    max_bounds.x = max(a.maxBounds.x, b.maxBounds.x); // ? a.maxBounds.x : b.maxBounds.x;
-    max_bounds.y = max(a.maxBounds.y, b.maxBounds.y); // ? a.maxBounds.y : b.maxBounds.y;
-    max_bounds.z = max(a.maxBounds.z, b.maxBounds.z); // ? a.maxBounds.z : b.maxBounds.z;
+    min_bounds.x = min(a.minBounds.x, b.minBounds.x); 
+    min_bounds.y = min(a.minBounds.y, b.minBounds.y); 
+    min_bounds.z = min(a.minBounds.z, b.minBounds.z); 
+    max_bounds.x = max(a.maxBounds.x, b.maxBounds.x); 
+    max_bounds.y = max(a.maxBounds.y, b.maxBounds.y); 
+    max_bounds.z = max(a.maxBounds.z, b.maxBounds.z); 
     return (AABB(min_bounds, max_bounds));
 }
-
 
 void Bin::evaluateBounds() {
     bounds = calculateBounds(primIndices);
@@ -239,31 +232,30 @@ AABB Bin::evaluateGetBounds() {
 }
 
 void Node::binnedPartition() {
-	//16 bins along widest axis
+    //16 bins along widest axis
     constexpr int nBins = 16;
     Bin bins[nBins];
     float k1, k0;
 
-	AABB cBounds = calculateCentroidBounds(first(), count);
-	float3 dim = cBounds.maxBounds - cBounds.minBounds;
+    AABB cBounds = calculateCentroidBounds(first(), count);
+    float3 dim = cBounds.maxBounds - cBounds.minBounds;
 
-	
-	//Populate bins
-	if (dim.x >= dim.y && dim.x >= dim.z) {
+    //Populate bins
+    if (dim.x >= dim.y && dim.x >= dim.z) {
         k0 = cBounds.minBounds.x;
         k1 = (nBins * (1 - EPSILON)) / dim.x;
 
-		for (int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             uint indexi = BVH::indices[first() + i];
             CoreTri prim = BVH::primitives[indexi];
             float primCenter = triangleCenter(prim).x;
 
-			int binId = k1 * (primCenter - k0);
-			//print ("binId: ", binId, " k1: ", k1, "primcenter", primCenter, "k0", k0);
+            int binId = k1 * (primCenter - k0);
+            //print ("binId: ", binId, " k1: ", k1, "primcenter", primCenter, "k0", k0);
             bins[binId].addPrim(indexi);
-		}
+        }
 
-	} else if (dim.y >= dim.x && dim.y >= dim.z) {
+    } else if (dim.y >= dim.x && dim.y >= dim.z) {
         k0 = cBounds.minBounds.y;
         k1 = (nBins * (1 - EPSILON)) / dim.y;
 
@@ -275,7 +267,7 @@ void Node::binnedPartition() {
             int binId = k1 * (primCenter - k0);
             bins[binId].addPrim(indexi);
         }
-	} else /* z dim is largest */ {
+    } else /* z dim is largest */ {
         k0 = cBounds.minBounds.z;
         k1 = (nBins * (1 - EPSILON)) / dim.z;
 
@@ -287,30 +279,29 @@ void Node::binnedPartition() {
             int binId = k1 * (primCenter - k0);
             bins[binId].addPrim(indexi);
         }
-	}
+    }
 
-	Bin leftBins[nBins]; //aggregation of bins
-    
-	bins[0].evaluateBounds();
-	leftBins[0] = bins[0];
+    Bin leftBins[nBins]; //aggregation of bins
+
+    bins[0].evaluateBounds();
+    leftBins[0] = bins[0];
     leftBins[0].cost = calculateRawSAH(leftBins[0].bounds) * leftBins[0].count;
 
-	//evaluateBounds for each bin and sweep from left
-    for (int i = 1; i < nBins; i++) { 
-        Bin &a = leftBins[i - 1];	//previous aggregated bins
-        Bin &b = leftBins[i];		//current bin to be calculated
-        Bin &bin = bins[i];			//bin to be added to current bin
+    //evaluateBounds for each bin and sweep from left
+    for (int i = 1; i < nBins; i++) {
+        Bin &a = leftBins[i - 1]; //previous aggregated bins
+        Bin &b = leftBins[i];     //current bin to be calculated
+        Bin &bin = bins[i];       //bin to be added to current bin
 
-		b.primIndices = a.primIndices;
+        b.primIndices = a.primIndices;
         b.primIndices.insert(b.primIndices.end(), bin.primIndices.begin(), bin.primIndices.end());
-       // print("a bounds: min(", a.bounds.minBounds.x, ") b bounds: minx: ", b.bounds.minBounds.x);
+        // print("a bounds: min(", a.bounds.minBounds.x, ") b bounds: minx: ", b.bounds.minBounds.x);
         b.bounds = mergeBounds(a.bounds, bin.evaluateGetBounds());
         b.count = a.count + bin.count;
         b.cost = calculateRawSAH(b.bounds) * b.count;
-	}
+    }
 
-    
-	Bin rightBins[nBins]; //aggregation of bins
+    Bin rightBins[nBins]; //aggregation of bins
     int ii = nBins - 1;
     bins[ii].evaluateBounds();
     rightBins[ii] = bins[ii];
@@ -318,9 +309,9 @@ void Node::binnedPartition() {
 
     //evaluateBounds for each bin and sweep from right
     for (int i = 1; i < nBins; i++) {
-        Bin &a = rightBins[ii - i + 1];	//previous aggregated bins
-        Bin &b = rightBins[ii - i];		//current bin to be calculated
-        Bin &bin = bins[ii - i];		//bin to be added to current bin
+        Bin &a = rightBins[ii - i + 1]; //previous aggregated bins
+        Bin &b = rightBins[ii - i];     //current bin to be calculated
+        Bin &bin = bins[ii - i];        //bin to be added to current bin
 
         b.primIndices = a.primIndices;
         b.primIndices.insert(b.primIndices.end(), bin.primIndices.begin(), bin.primIndices.end());
@@ -336,30 +327,90 @@ void Node::binnedPartition() {
     //     print("Rightbin: ", blin.count);
     // }
 
-	//find optimal split
-	float optimalCost = numeric_limits<float>::max();
+    //find optimal split
+    float optimalCost = numeric_limits<float>::max();
     Bin bestLeft;
-	Bin bestRight;
+    Bin bestRight;
     bool split_worthwile = false;
 
-	for (int i = 0; i < nBins - 1; i++) { 
-		Bin &left  = leftBins[i];
+    for (int i = 0; i < nBins - 1; i++) {
+        Bin &left = leftBins[i];
         Bin &right = rightBins[i + 1];
-		float totalCost = left.cost + right.cost;
+        float totalCost = left.cost + right.cost;
         // print("left count: ", left.count, " right count: ", right.count);
         // print("left cost : ", left.cost , " right cost : ", right.cost );
-		if (totalCost < optimalCost) {
+        if (totalCost < optimalCost) {
             split_worthwile = true;
-			optimalCost = totalCost;
+            optimalCost = totalCost;
             bestLeft = left;
             bestRight = right;
-		}
-	}
+        }
+    }
 
-    if (!split_worthwile) {
-        return;
-    };
-    
+    if (!split_worthwile) { return; };
+
     convertNode(bestLeft.primIndices, bestLeft.bounds, bestRight.primIndices, bestRight.bounds);
 }
+
+void BVH::convertBVH4() {
+    print("converting bvh");
+    static vector<Node> nodes2 = BVH::nodes;
+    print("assigned nodes");
+    BVH::nodes.clear();
+    print("cleared nodes");
+	BVH::nodeIndex = 0;
+    
+	print("transform now");
+	BVH::tranformBVH4Node(*root, nodes2);
 }
+
+
+AABB mergeBoundsVec(vector<Node> nodes) {
+    AABB result = nodes[0].bounds;
+    for (int i = 1; i < nodes.size(); i++) { mergeBounds(result, nodes[i].bounds); }
+    return result;
+}
+
+void BVH::tranformBVH4Node(Node node, vector<Node> &nodes2) {
+    if (node.isLeaf()) return;
+	
+	Node lChild, rChild;
+
+	vector<Node> newChilds;
+    newChilds.clear();
+    lChild = nodes2[node.left()];
+    rChild = nodes2[node.right()];
+
+    //check if childnode is leafnode
+    if (!lChild.isLeaf()) {
+		newChilds.push_back(nodes2[lChild.left()]);
+		newChilds.push_back(nodes2[lChild.right()]);
+    } else {
+        newChilds.push_back(lChild);
+	}
+    if (!rChild.isLeaf()) {
+		newChilds.push_back(nodes2[rChild.left()]);
+		newChilds.push_back(nodes2[rChild.right()]);
+    } else {
+        newChilds.push_back(rChild);
+	}
+	
+    //recalculate bounding box
+    node.setBounds(mergeBoundsVec(newChilds));
+
+    //reorder nodes
+    node.setLeft(BVH::nodeIndex + 1);
+
+    for (Node n : newChilds) { 
+		BVH::nodes[++nodeIndex] = n;
+	}
+
+    //perform conversion on childs
+    for (Node n : newChilds) { 
+		BVH::tranformBVH4Node(n, nodes2);
+	}
+
+    //return bvh4
+}
+
+} // namespace lh2core

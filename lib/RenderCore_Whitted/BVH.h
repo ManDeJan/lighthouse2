@@ -91,6 +91,8 @@ public:
     static vector<CoreTri> primitives;
 
     void setMesh(Mesh &mesh);
+    void convertBVH4();
+    void tranformBVH4Node(Node node, vector<Node> &nodes2);
     void constructBVH();
 };
 

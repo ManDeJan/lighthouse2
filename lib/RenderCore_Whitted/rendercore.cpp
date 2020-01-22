@@ -82,6 +82,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         print("Building BVH");
         bvh.constructBVH();
         print("Done BVH");
+        bvh.convertBVH4();
         // print("BVH size ", bvh.nodes.size());
         // for (auto &node : bvh.nodes) {
         //     if (node.isLeaf()) {
@@ -109,7 +110,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
 
 /* First loop over all pixels to calculate their color.	
 	   The result is stored in the accumulator buffer. */
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
     for (int y = 0; y < screen->height; y++) {
         for (int x = 0; x < screen->width; x++) {
             // Draw noisy to increase speed
@@ -133,7 +134,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
     }
 
 /* Now plot all pixels to the screen from the buffer. */
-#pragma omp parallel for
+//#pragma omp parallel for
     for (int y = 0; y < screen->height; y++) {
         for (uint x = 0; x < screen->width; x++) {
             float4 accColor = accBuffer.at(size_t(y) * screen->width + x);
