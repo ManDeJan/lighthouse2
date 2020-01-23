@@ -99,6 +99,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         //     print("alle_idx ", idx);
         // }
         // printBVH(*bvh.root);
+        print("done converting");
         rebuild_bvh = false;
     }
     constexpr float noise_probability = 0.01f; // To increase speed, we only shoot a primary ray for 10% of the pixels.
@@ -578,17 +579,21 @@ void RenderCore::SetLights(const CoreLightTri *_areaLights,
     areaLights.clear();
 
     // Load the new light data.
-    pointLights.resize(pointLightCount);
-    memcpy(&pointLights[0], _pointLights, pointLightCount * sizeof(CorePointLight));
+    pointLights.assign(_pointLights, _pointLights + pointLightCount);
+    //pointLights.resize(pointLightCount);
+    //memcpy(&pointLights[0], _pointLights, pointLightCount * sizeof(CorePointLight));
 
-    spotLights.resize(spotLightCount);
-    memcpy(&spotLights[0], _spotLights, spotLightCount * sizeof(CoreSpotLight));
+	spotLights.assign(_spotLights, _spotLights + spotLightCount);
+    //spotLights.resize(spotLightCount);
+    //memcpy(&spotLights[0], _spotLights, spotLightCount * sizeof(CoreSpotLight));
 
-    dirLights.resize(directionalLightCount);
-    memcpy(&dirLights[0], _directionalLights, directionalLightCount * sizeof(CoreDirectionalLight));
-
-    areaLights.resize(areaLightCount);
-    memcpy(&areaLights[0], _areaLights, areaLightCount * sizeof(CoreLightTri));
+	dirLights.assign(_directionalLights, _directionalLights + directionalLightCount);
+    //dirLights.resize(directionalLightCount);
+    //memcpy(&dirLights[0], _directionalLights, directionalLightCount * sizeof(CoreDirectionalLight));
+	
+	areaLights.assign(_areaLights, _areaLights + areaLightCount);
+    //areaLights.resize(areaLightCount);
+    //memcpy(&areaLights[0], _areaLights, areaLightCount * sizeof(CoreLightTri));
 }
 
 void RenderCore::SetSkyData(const float3 *pixels, const uint width, const uint height) {

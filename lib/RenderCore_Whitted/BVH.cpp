@@ -360,7 +360,10 @@ void BVH::convertBVH4() {
     BVH::nodeIndex = 0;
 
     BVH::nodes[0] = nodes2[0];
-	BVH::tranformBVH4Node(nodes[0], nodes2);
+    BVH::root = &nodes[0];
+
+	print("debug this");
+	BVH::tranformBVH4Node(*root, nodes2);
 }
 
 
