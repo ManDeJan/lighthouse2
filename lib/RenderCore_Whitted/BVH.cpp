@@ -210,7 +210,7 @@ void Node::convertNode(vector<uint> left, AABB leftAABB, vector<uint> right, AAB
 
     //setLeftNode and set to parent node
     setLeft(BVH::nodeIndex + 1);
-    setCount(0);
+    setChildCount(2);
 }
 
 AABB mergeBounds(AABB a, AABB b) {
@@ -353,15 +353,14 @@ void Node::binnedPartition() {
 }
 
 void BVH::convertBVH4() {
-    print("converting bvh");
-    static vector<Node> nodes2 = BVH::nodes;
-    print("assigned nodes");
-    BVH::nodes.clear();
-    print("cleared nodes");
-	BVH::nodeIndex = 0;
     
-	print("transform now");
-	BVH::tranformBVH4Node(*root, nodes2);
+    static vector<Node> nodes2 = BVH::nodes;
+    BVH::nodes.clear();
+    BVH::nodes.resize(nodes2.size());
+    BVH::nodeIndex = 0;
+
+    BVH::nodes[0] = nodes2[0];
+	BVH::tranformBVH4Node(nodes[0], nodes2);
 }
 
 
@@ -371,7 +370,7 @@ AABB mergeBoundsVec(vector<Node> nodes) {
     return result;
 }
 
-void BVH::tranformBVH4Node(Node node, vector<Node> &nodes2) {
+void BVH::tranformBVH4Node(Node &node, vector<Node> &nodes2) {
     if (node.isLeaf()) return;
 	
 	Node lChild, rChild;
