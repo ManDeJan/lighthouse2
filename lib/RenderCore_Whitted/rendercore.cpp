@@ -85,8 +85,8 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         print("Building BVH");
         bvh.constructBVH();
         print("Done BVH");
-        if (bvh4)
-			bvh.convertBVH4();
+        // if (bvh4)
+		// 	bvh.convertBVH4();
         // print("BVH size ", bvh.nodes.size());
         // for (auto &node : bvh.nodes) {
         //     if (node.isLeaf()) {

@@ -73,6 +73,43 @@ public:
     }
 };
 
+
+template <size_t Size>
+struct SIMD_Ray {
+    array<float3, Size> origins;
+    array<float3, Size> directions;
+    SIMD_Ray (const array<float3, Size> &origins,
+              const array<float3, Size> &directions,
+              bool offset = false) : origins(origins), directions(directions) {
+        if (offset)
+            for (size_t i = 0; i < Size; i++)
+                origins[i] += directions[i] * EPSILON;
+    }
+
+    float calcIntersectDist(const CoreTri &tri, const size_t i = 0) const {
+        float3 v0v1 = tri.vertex1 - tri.vertex0;
+        float3 v0v2 = tri.vertex2 - tri.vertex0;
+        float3 pvec = cross(directions[i], v0v2);
+        float det = dot(v0v1, pvec);
+
+        if (fabs(det) < EPSILON) return UINT_MAX;
+        float invDet = 1 / det;
+
+        float3 tvec = origins[i] - tri.vertex0;
+        float u = dot(tvec, pvec) * invDet;
+        if (u < 0 || u > 1) return UINT_MAX;
+
+        float3 qvec = cross(tvec, v0v1);
+        float v = dot(directions[i], qvec) * invDet;
+        if (v < 0 || u + v > 1) return UINT_MAX;
+
+        float t = dot(v0v2, qvec) * invDet;
+        if (t < EPSILON || t > 1 / EPSILON) return UINT_MAX;
+
+        return t;
+    }
+};
+
 //  +-----------------------------------------------------------------------------+
 //  |  Mesh                                                                       |
 //  |  Minimalistic mesh storage.                                           LH2'19|
