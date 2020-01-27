@@ -97,6 +97,7 @@ public:
 
     void setMesh(Mesh &mesh);
     void convertBVH4();
+    void transformBVH4Node(Node &node, vector<Node> &nodes2);
     void tranformBVH4Node(Node &node, vector<Node> &nodes2);
     void constructBVH();
 };
