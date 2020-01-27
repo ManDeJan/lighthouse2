@@ -13,7 +13,6 @@ vector<CoreTri> BVH::primitives;
 float3 triangleCenter(CoreTri &tri) {
     return (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 }
-
 float calculateRawSAH(AABB bounds) { //not including the number of primitves
     float3 box = bounds.maxBounds - bounds.minBounds;
     return (2 * box.x * box.y + 2 * box.y * box.z + 2 * box.z * box.x);
@@ -400,7 +399,6 @@ void BVH::transformBVH4Node(Node &node, vector<Node> &nodes2) {
     }
 	sort(newChilds.begin(), newChilds.end(), sortAABB);
 	
-	//node.setBounds(mergeBoundsVec(newChilds));
     node.setLeft(nodeIndex + 1);
     node.setChildCount(newChilds.size());
 	

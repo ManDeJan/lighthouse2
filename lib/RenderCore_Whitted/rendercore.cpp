@@ -13,7 +13,6 @@
    limitations under the License.
 */
 
-
 #include "core_settings.h"
 #include "rendercore.h"
 
@@ -33,7 +32,7 @@ void RenderCore::Init() {
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::SetTarget                                                      |
 //  |  Set the OpenGL texture that serves as the render target.             LH2'19|
-//  +-----------------------------------------------------------------------------+ 
+//  +-----------------------------------------------------------------------------+
 void RenderCore::SetTarget(GLTexture *target) {
     // synchronize OpenGL viewport
     targetTextureID = target->ID;
@@ -78,16 +77,11 @@ uint intersections = 0;
 int triangleTreeCount(Node &n, vector<Node> &nodes) {
     if (n.isLeaf()) return n.count;
 
-	int result = 0;
+    int result = 0;
 
-	for (int i = 0; i < n.childCount(); i++) { 
-		result += triangleTreeCount(nodes[n.left() + i], nodes);
-	}
+    for (int i = 0; i < n.childCount(); i++) { result += triangleTreeCount(nodes[n.left() + i], nodes); }
     return result;
-
 }
-
-
 
 int totalChildcount(Node &n, vector<Node> &nodes, vector<int> &childCounts) {
     if (n.isLeaf()) return 0;
@@ -96,7 +90,7 @@ int totalChildcount(Node &n, vector<Node> &nodes, vector<int> &childCounts) {
 
     for (int i = 0; i < n.childCount(); i++) { result += totalChildcount(nodes[n.left() + i], nodes, childCounts); }
 
-	childCounts[n.childCount()] = childCounts[n.childCount()] +1;
+    childCounts[n.childCount()] = childCounts[n.childCount()] + 1;
 
     return result + n.childCount();
 }
@@ -114,10 +108,8 @@ int layerCount(Node &n, vector<Node> &nodes) {
 
     int result = 0;
 
-	return triangleTreeCount(nodes[n.left()], nodes) + 1;
-
+    return triangleTreeCount(nodes[n.left()], nodes) + 1;
 }
-
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Render                                                         |
@@ -135,18 +127,17 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         print("bvh2 layercount:", layerCount(*bvh.root, bvh.nodes));
         print("BVH2 average childCount:");
 
-		vector<int> childCounts2(5, 0);
+        vector<int> childCounts2(5, 0);
         totalChildcount(*bvh.root, bvh.nodes, childCounts2);
         for (int n : childCounts2) print(n);
-        if (bvh4) 
-			bvh.convertBVH4();
+        if (bvh4) bvh.convertBVH4();
         print("BVH4 trianglecount: ", triangleTreeCount(*bvh.root, bvh.nodes));
         print("BVH4 nonLeafCount: ", nonLeafCount(*bvh.root, bvh.nodes));
         print("bvh4 layercount:", layerCount(*bvh.root, bvh.nodes));
         vector<int> childCounts4(5, 0);
         totalChildcount(*bvh.root, bvh.nodes, childCounts4);
         for (int n : childCounts4) print(n);
-       // print("BVH2 average childCount:", totalChildcount(*bvh.root, bvh.nodes));
+        // print("BVH2 average childCount:", totalChildcount(*bvh.root, bvh.nodes));
         // print("BVH size ", bvh.nodes.size());
         // for (auto &node : bvh.nodes) {
         //     if (node.isLeaf()) {
@@ -484,6 +475,20 @@ bool RenderCore::intersectNode(const Ray &ray, const Node &node, float &t) {
     return true;
 }
 
+struct NodeIntersection {
+public:
+    int nodeIndex;
+    float t;
+
+    NodeIntersection() = default;
+    NodeIntersection(int nodeIndex, float t) : nodeIndex(nodeIndex), t(t) {}
+
+};
+
+bool sortNodeIntersections(NodeIntersection a, NodeIntersection b) {
+    return b.t > a.t;
+}
+
 Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersection &inter) {
     // print("Traversal: ", ++traverseBVHcount);
     if (node.isLeaf()) {
@@ -502,19 +507,19 @@ Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersect
 
             int childCount = node.childCount();
             vector<float> t(childCount, numeric_limits<float>::max());
-            vector<bool> intersections;
+            vector<NodeIntersection> intersections;
 
             for (int i = 0; i < childCount; i++) {
-                intersections.push_back(intersectNode(ray, BVH::nodes[node.left() + i], t[i]));
+                if (intersectNode(ray, BVH::nodes[node.left() + i], t[i]))
+
+                intersections.push_back(NodeIntersection(node.left() + i, t[i]));
                 // print("intersecting");
             }
+            sort(intersections.begin(), intersections.end(), sortNodeIntersections);
 
-            for (int i = 0; i < childCount; i++) {
-                if (intersections[i]) {
-                    //print("intersects");
-                    traverseBVH(ray, BVH::nodes[node.left() + i], inter);
-                }
-            }
+			for (NodeIntersection i : intersections) { 
+				traverseBVH(ray, BVH::nodes[i.nodeIndex], inter);
+			}
 
         } else {
             //print("bvh2");
