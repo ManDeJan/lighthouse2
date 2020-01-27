@@ -397,6 +397,7 @@ Intersection RenderCore::getNearestIntersection(Ray &ray) {
     return i;
 }
 
+
 bool RenderCore::intersectNode(const Ray &ray, const Node &node, float &t) {
     float3 dir_frac = make_float3(0, 0, 0);
 
@@ -428,8 +429,8 @@ bool RenderCore::intersectNode(const Ray &ray, const Node &node, float &t) {
     return true;
 }
 
-
-Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersection &inter) {
+template <size_t RaySize>
+Intersection RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, Node &node, Intersection &inter) {
 
     // print("Traversal: ", ++traverseBVHcount);
     if (node.isLeaf()) {

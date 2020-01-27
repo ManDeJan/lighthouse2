@@ -167,7 +167,7 @@ public:
 private:
     Intersection getNearestIntersection(Ray &ray);
     Intersection getNearestIntersectionBVH(Ray &ray);
-    Intersection traverseBVH(const Ray &ray, const Node &node, Intersection &inter);
+    template <size_t RaySize> Intersection traverseBVH(const SIMD_Ray<RaySize> &ray, Node &node, Intersection &inter);
     bool intersectNode(const Ray &ray, const Node &node, float &t);
     float3 calcRayColor(Ray ray, uint depth);
     bool existNearerIntersection(Ray ray, float distance);
