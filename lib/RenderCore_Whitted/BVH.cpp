@@ -374,7 +374,7 @@ void BVH::convertBVH4() {
 }
 
 bool sortAABB(Node a, Node b) {
-	return calculateRawSAH(a.bounds) >= calculateRawSAH(b.bounds);
+    return calculateRawSAH(b.bounds) < calculateRawSAH(a.bounds);
 }
 
 void BVH::transformBVH4Node(Node &node, vector<Node> &nodes2) {

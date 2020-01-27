@@ -86,6 +86,21 @@ int triangleTreeCount(Node &n, vector<Node> &nodes) {
     return result;
 
 }
+
+
+
+int totalChildcount(Node &n, vector<Node> &nodes, vector<int> &childCounts) {
+    if (n.isLeaf()) return 0;
+
+    int result = 0;
+
+    for (int i = 0; i < n.childCount(); i++) { result += totalChildcount(nodes[n.left() + i], nodes, childCounts); }
+
+	childCounts[n.childCount()] = childCounts[n.childCount()] +1;
+
+    return result + n.childCount();
+}
+
 int nonLeafCount(Node &n, vector<Node> &nodes) {
     if (n.isLeaf()) return 0;
 
@@ -102,6 +117,8 @@ int layerCount(Node &n, vector<Node> &nodes) {
 	return triangleTreeCount(nodes[n.left()], nodes) + 1;
 
 }
+
+
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
@@ -113,13 +130,23 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         bvh.constructBVH();
         print("Done BVH");
         print("BVH2 trianglecount: ", triangleTreeCount(*bvh.root, bvh.nodes));
-        print("BVH2 nonLeafCount: ", nonLeafCount(*bvh.root, bvh.nodes));
+        int nonleafCount = nonLeafCount(*bvh.root, bvh.nodes);
+        print("BVH2 nonLeafCount: ", nonleafCount);
         print("bvh2 layercount:", layerCount(*bvh.root, bvh.nodes));
+        print("BVH2 average childCount:");
+
+		vector<int> childCounts2(5, 0);
+        totalChildcount(*bvh.root, bvh.nodes, childCounts2);
+        for (int n : childCounts2) print(n);
         if (bvh4) 
 			bvh.convertBVH4();
         print("BVH4 trianglecount: ", triangleTreeCount(*bvh.root, bvh.nodes));
         print("BVH4 nonLeafCount: ", nonLeafCount(*bvh.root, bvh.nodes));
         print("bvh4 layercount:", layerCount(*bvh.root, bvh.nodes));
+        vector<int> childCounts4(5, 0);
+        totalChildcount(*bvh.root, bvh.nodes, childCounts4);
+        for (int n : childCounts4) print(n);
+       // print("BVH2 average childCount:", totalChildcount(*bvh.root, bvh.nodes));
         // print("BVH size ", bvh.nodes.size());
         // for (auto &node : bvh.nodes) {
         //     if (node.isLeaf()) {
