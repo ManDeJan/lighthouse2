@@ -522,9 +522,9 @@ Intersection RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, const Node &n
             vector<NodeIntersection> intersections;
 
             for (int i = 0; i < childCount; i++) {
-                if (intersectNode(ray, BVH::nodes[node.left() + i], t[i]))
-
-                intersections.push_back(NodeIntersection(node.left() + i, t[i]));
+                if (intersectNode(ray, BVH::nodes[node.left() + i], t[i])) {
+					intersections.push_back(NodeIntersection(node.left() + i, t[i]));
+				}
                 // print("intersecting");
             }
             sort(intersections.begin(), intersections.end(), sortNodeIntersections);
