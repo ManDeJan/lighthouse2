@@ -21,8 +21,6 @@ constexpr bool bvh4 = false;
 
 using namespace lh2core;
 
-
-
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Init                                                           |
 //  |  Initialization.                                                      LH2'19|
@@ -73,8 +71,47 @@ void RenderCore::SetGeometry(const int meshIdx,
     // print("new mesh added");
 }
 
-
 uint max_inter_count = 0;
+uint intersections = 0;
+
+int triangleTreeCount(Node &n, vector<Node> &nodes) {
+    if (n.isLeaf()) return n.count;
+
+    int result = 0;
+
+    for (int i = 0; i < n.childCount(); i++) { result += triangleTreeCount(nodes[n.left() + i], nodes); }
+    return result;
+}
+
+int totalChildcount(Node &n, vector<Node> &nodes, vector<int> &childCounts) {
+    if (n.isLeaf()) return 0;
+
+    int result = 0;
+
+    for (int i = 0; i < n.childCount(); i++) { result += totalChildcount(nodes[n.left() + i], nodes, childCounts); }
+
+    childCounts[n.childCount()] = childCounts[n.childCount()] + 1;
+
+    return result + n.childCount();
+}
+
+int nonLeafCount(Node &n, vector<Node> &nodes) {
+    if (n.isLeaf()) return 0;
+
+    int result = 0;
+
+    for (int i = 0; i < n.childCount(); i++) { result += triangleTreeCount(nodes[n.left() + i], nodes); }
+    return result + 1;
+}
+
+int layerCount(Node &n, vector<Node> &nodes) {
+    if (n.isLeaf()) return 0;
+
+    int result = 0;
+
+    return triangleTreeCount(nodes[n.left()], nodes) + 1;
+}
+
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
@@ -85,8 +122,23 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         print("Building BVH");
         bvh.constructBVH();
         print("Done BVH");
-        if (bvh4)
-			bvh.convertBVH4();
+        print("BVH2 trianglecount: ", triangleTreeCount(*bvh.root, bvh.nodes));
+        int nonleafCount = nonLeafCount(*bvh.root, bvh.nodes);
+        print("BVH2 nonLeafCount: ", nonleafCount);
+        print("bvh2 layercount:", layerCount(*bvh.root, bvh.nodes));
+        print("BVH2 average childCount:");
+
+        vector<int> childCounts2(5, 0);
+        totalChildcount(*bvh.root, bvh.nodes, childCounts2);
+        for (int n : childCounts2) print(n);
+        if (bvh4) bvh.convertBVH4();
+        print("BVH4 trianglecount: ", triangleTreeCount(*bvh.root, bvh.nodes));
+        print("BVH4 nonLeafCount: ", nonLeafCount(*bvh.root, bvh.nodes));
+        print("bvh4 layercount:", layerCount(*bvh.root, bvh.nodes));
+        vector<int> childCounts4(5, 0);
+        totalChildcount(*bvh.root, bvh.nodes, childCounts4);
+        for (int n : childCounts4) print(n);
+        // print("BVH2 average childCount:", totalChildcount(*bvh.root, bvh.nodes));
         // print("BVH size ", bvh.nodes.size());
         // for (auto &node : bvh.nodes) {
         //     if (node.isLeaf()) {
@@ -143,8 +195,8 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         }
     }
 
-/* Now plot all pixels to the screen from the buffer. */
-//#pragma omp parallel for
+    /* Now plot all pixels to the screen from the buffer. */
+    //#pragma omp parallel for
     for (int y = 0; y < screen->height; y++) {
         for (uint x = 0; x < screen->width; x++) {
             float4 accColor = accBuffer.at(size_t(y) * screen->width + x);
@@ -177,9 +229,10 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
     print("frame time: ", int(time_span.count() * 1000), " ms");
     print("max_inter_count:", max_inter_count);
+    print("intersection count:", intersections);
+    intersections = 0;
     //printf("Render finished \n");
 }
-
 
 float3 RenderCore::calcRayColor(Ray ray, uint depth) {
     constexpr uint max_depth = 5; // Maximum recursion depth for each ray.
@@ -429,47 +482,68 @@ bool RenderCore::intersectNode(const Ray &ray, const Node &node, float &t) {
     return true;
 }
 
-template <size_t RaySize>
-Intersection RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, Node &node, Intersection &inter) {
+struct NodeIntersection {
+public:
+    int nodeIndex;
+    float t;
 
+    NodeIntersection() = default;
+    NodeIntersection(int nodeIndex, float t) : nodeIndex(nodeIndex), t(t) {}
+
+};
+
+bool sortNodeIntersections(NodeIntersection a, NodeIntersection b) {
+    return b.t > a.t;
+}
+
+template <size_t RaySize>
+Intersection RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, const Node &node, Intersection &inter) {
     // print("Traversal: ", ++traverseBVHcount);
     if (node.isLeaf()) {
-        for (int i = node.first(); i < node.first() + node.count; i++) {
-            inter.intersections_count++;
-            float t = ray.calcIntersectDist(BVH::primitives[BVH::indices[i]]);
-            if (t < inter.distance && t > 0) {
-                inter.distance = t;
-                inter.triangle = &BVH::primitives[BVH::indices[i]];
-                inter.location = ray.origins[0] + ray.directions[0] * inter.distance;
+        // constexpr if (RaySize > 1) {
+            for (int i = node.first(); i < node.first() + node.count; i++) {
+                inter.intersections_count++;
+                float t = ray.calcIntersectDist(BVH::primitives[BVH::indices[i]]);
+                if (t < inter.distance && t > 0) {
+                    inter.distance = t;
+                    inter.triangle = &BVH::primitives[BVH::indices[i]];
+                    inter.location = ray.origins[0] + ray.directions[0] * inter.distance;
+                }
             }
-        }
+        // } else {
+        //     node
+        // }
     } else /* if the node is not a leaf */ {
-
-		if (bvh4) {
+        if (bvh4) {
             inter.intersections_count++;
 
-			int childCount = node.childCount();
-			vector<float> t(childCount, numeric_limits<float>::max());
-            vector<bool> intersections;
+            int childCount = node.childCount();
+            vector<float> t(childCount, numeric_limits<float>::max());
+            vector<NodeIntersection> intersections;
 
-			//print("traversing");
+            for (int i = 0; i < childCount; i++) {
+                if (intersectNode(ray, BVH::nodes[node.left() + i], t[i]))
 
-			for (int i = 0; i < childCount; i++) { 
-				intersections.push_back(intersectNode(ray, BVH::nodes[node.left()+i], t[i]));
-               // print("intersecting");
+                intersections.push_back(NodeIntersection(node.left() + i, t[i]));
+                // print("intersecting");
+            }
+            sort(intersections.begin(), intersections.end(), sortNodeIntersections);
+
+			for (NodeIntersection i : intersections) { 
+				traverseBVH(ray, BVH::nodes[i.nodeIndex], inter);
 			}
 
-			for (int i = 0; i < childCount; i++) { 
-				if (intersections[i])
-					traverseBVH(ray, BVH::nodes[node.left() + i], inter);
-            }
+        } else {
+            //print("bvh2");
+            inter.intersections_count++;
+            float t_left = numeric_limits<float>::max();
+            float t_right = numeric_limits<float>::max();
 
-
-           /* bool intersects_left = intersectNode(ray, BVH::nodes[node.], t1);
-            bool intersects_right = intersectNode(ray, BVH::nodes[node.right()], t2);
+            bool intersects_left = intersectNode(ray, BVH::nodes[node.left()], t_left);
+            bool intersects_right = intersectNode(ray, BVH::nodes[node.right()], t_right);
 
             if (intersects_left && intersects_right) {
-                if (t1 < t2) {
+                if (t_left < t_right) {
                     traverseBVH(ray, BVH::nodes[node.left()], inter);
                     traverseBVH(ray, BVH::nodes[node.right()], inter);
                 } else {
@@ -480,30 +554,8 @@ Intersection RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, Node &node, I
                 traverseBVH(ray, BVH::nodes[node.left()], inter);
             } else if (intersects_right) {
                 traverseBVH(ray, BVH::nodes[node.right()], inter);
-            }*/
-        } else {
-            //print("bvh2");
-			inter.intersections_count++;
-			float t_left  = numeric_limits<float>::max();
-			float t_right = numeric_limits<float>::max();
-
-			bool intersects_left  = intersectNode(ray, BVH::nodes[node.left()], t_left);
-			bool intersects_right = intersectNode(ray, BVH::nodes[node.right()], t_right);
-        
-			if (intersects_left && intersects_right) {
-				if (t_left < t_right) {
-						traverseBVH(ray, BVH::nodes[node.left()], inter);
-						traverseBVH(ray, BVH::nodes[node.right()], inter);
-				} else {
-						traverseBVH(ray, BVH::nodes[node.right()], inter);
-						traverseBVH(ray, BVH::nodes[node.left()], inter);
-				}
-			} else if (intersects_left) {
-				traverseBVH(ray, BVH::nodes[node.left()], inter);
-			} else if (intersects_right) {
-				traverseBVH(ray, BVH::nodes[node.right()], inter);
-			}
-		}
+            }
+        }
     }
 
     return inter;
@@ -589,15 +641,15 @@ void RenderCore::SetLights(const CoreLightTri *_areaLights,
     //pointLights.resize(pointLightCount);
     //memcpy(&pointLights[0], _pointLights, pointLightCount * sizeof(CorePointLight));
 
-	spotLights.assign(_spotLights, _spotLights + spotLightCount);
+    spotLights.assign(_spotLights, _spotLights + spotLightCount);
     //spotLights.resize(spotLightCount);
     //memcpy(&spotLights[0], _spotLights, spotLightCount * sizeof(CoreSpotLight));
 
-	dirLights.assign(_directionalLights, _directionalLights + directionalLightCount);
+    dirLights.assign(_directionalLights, _directionalLights + directionalLightCount);
     //dirLights.resize(directionalLightCount);
     //memcpy(&dirLights[0], _directionalLights, directionalLightCount * sizeof(CoreDirectionalLight));
-	
-	areaLights.assign(_areaLights, _areaLights + areaLightCount);
+
+    areaLights.assign(_areaLights, _areaLights + areaLightCount);
     //areaLights.resize(areaLightCount);
     //memcpy(&areaLights[0], _areaLights, areaLightCount * sizeof(CoreLightTri));
 }

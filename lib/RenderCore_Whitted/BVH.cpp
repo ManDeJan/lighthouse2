@@ -13,7 +13,6 @@ vector<CoreTri> BVH::primitives;
 float3 triangleCenter(CoreTri &tri) {
     return (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 }
-
 float calculateRawSAH(AABB bounds) { //not including the number of primitves
     float3 box = bounds.maxBounds - bounds.minBounds;
     return (2 * box.x * box.y + 2 * box.y * box.z + 2 * box.z * box.x);
@@ -352,20 +351,6 @@ void Node::binnedPartition() {
     convertNode(bestLeft.primIndices, bestLeft.bounds, bestRight.primIndices, bestRight.bounds);
 }
 
-void BVH::convertBVH4() {
-    
-    static vector<Node> nodes2 = BVH::nodes;
-    BVH::nodes.clear();
-    BVH::nodes.resize(nodes2.size());
-    BVH::nodeIndex = 0;
-
-    BVH::nodes[0] = nodes2[0];
-    BVH::root = &nodes[0];
-
-	print("debug this");
-	BVH::tranformBVH4Node(*root, nodes2);
-}
-
 
 AABB mergeBoundsVec(vector<Node> nodes) {
     AABB result = nodes[0].bounds;
@@ -373,47 +358,67 @@ AABB mergeBoundsVec(vector<Node> nodes) {
     return result;
 }
 
-void BVH::tranformBVH4Node(Node &node, vector<Node> &nodes2) {
-    if (node.isLeaf()) return;
+void BVH::convertBVH4() {
+    
+	vector<Node> nodes2 = nodes;
+    
+	nodes.clear();
+    nodes.resize(nodes2.size());
+    nodes[0] = nodes2[0];
+    root = &nodes[0];
+    nodeIndex = 0;
+
+	transformBVH4Node(*root, nodes2);	
+
+}
+
+bool sortAABB(Node a, Node b) {
+    return calculateRawSAH(b.bounds) < calculateRawSAH(a.bounds);
+}
+
+void BVH::transformBVH4Node(Node &node, vector<Node> &nodes2) {
 	
-	Node lChild, rChild;
+	if (node.isLeaf()) return;
 
+	Node lChild = nodes2[node.left()];
+    Node rChild = nodes2[node.right()];
+	
 	vector<Node> newChilds;
-    newChilds.clear();
-    lChild = nodes2[node.left()];
-    rChild = nodes2[node.right()];
 
-    //check if childnode is leafnode
-    if (!lChild.isLeaf()) {
+	if (!lChild.isLeaf()) { 
 		newChilds.push_back(nodes2[lChild.left()]);
-		newChilds.push_back(nodes2[lChild.right()]);
+        newChilds.push_back(nodes2[lChild.right()]);
     } else {
         newChilds.push_back(lChild);
 	}
     if (!rChild.isLeaf()) {
-		newChilds.push_back(nodes2[rChild.left()]);
-		newChilds.push_back(nodes2[rChild.right()]);
+        newChilds.push_back(nodes2[rChild.left()]);
+        newChilds.push_back(nodes2[rChild.right()]);
     } else {
         newChilds.push_back(rChild);
-	}
+    }
+	sort(newChilds.begin(), newChilds.end(), sortAABB);
 	
-    //recalculate bounding box
-    node.setBounds(mergeBoundsVec(newChilds));
-
-    //reorder nodes
-    node.setLeft(BVH::nodeIndex + 1);
+    node.setLeft(nodeIndex + 1);
     node.setChildCount(newChilds.size());
+	
+    nodeIndex += newChilds.size();
 
-    for (Node n : newChilds) { 
-		BVH::nodes[++nodeIndex] = n;
+	for (int i = 0; i < newChilds.size(); i++) { 
+		nodes[node.left() + i] = newChilds[i];
 	}
 
-    //perform conversion on childs
-    for (Node n : newChilds) { 
-		BVH::tranformBVH4Node(n, nodes2);
+	for (int i = 0; i < newChilds.size(); i++) 
+	{ 
+		transformBVH4Node(nodes[node.left() + i], nodes2); 
 	}
 
-    //return bvh4
 }
+
+
+int calcSurfaceArea(AABB a) {
+    return (a.maxBounds.x - a.minBounds.x) * (a.maxBounds.y - a.minBounds.y) * (a.maxBounds.z - a.minBounds.z);
+}
+
 
 } // namespace lh2core
