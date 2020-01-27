@@ -177,7 +177,7 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
             if (true) {
                 // Anti-aliasing: shoot the ray through a random position inside the pixel.
                 Ray primaryRays;
-                for (int i = 0; i < primaryRays.size; i++) {
+                for (size_t i = 0; i < primaryRays.size; i++) {
                     float v = (y + Rand(1)) / (float)screen->height;
                     float u = (x + Rand(1)) / (float)screen->width;
                     float3 direction = normalize(view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1) - view.pos);
@@ -189,8 +189,12 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
                 // Intersection i = getNearestIntersection(primaryRay); // duplicate nearest intersection?? Zie calcRayColor
 
                 // Calculate color and store in accumulator buffer.
-                float3 pixelColor = calcRayColor(primaryRays, 0);
-                accBuffer.at(size_t(y) * screen->width + x) += make_float4(pixelColor, 1.0f);
+                array<Intersection, Ray::size> inters;
+                getNearestIntersectionsBVH(primaryRays, inters);
+                for (size_t i = 0; i < Ray::size; i++) {
+                    float3 pixelColor = calcRayColor(Ray1(primaryRays.origins[i], primaryRays.directions[i]), inters[i], 0);
+                    accBuffer.at(size_t(y) * screen->width + x) += make_float4(pixelColor, 1.0f);
+                }
             }
         }
     }
@@ -234,10 +238,11 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
     //printf("Render finished \n");
 }
 
-float3 RenderCore::calcRayColor(Ray ray, uint depth) {
+float3 RenderCore::calcRayColor(Ray1 ray, Intersection &i, uint depth) {
     constexpr uint max_depth = 5; // Maximum recursion depth for each ray.
     constexpr float ambient_light = 0.04f;
-    Intersection i = getNearestIntersectionBVH(ray);
+    
+    // Intersection i = inter;
 
     if (bvh_visualization) {
         max_inter_count = max(max_inter_count, i.intersections_count);
@@ -272,8 +277,9 @@ float3 RenderCore::calcRayColor(Ray ray, uint depth) {
     switch (m.type) {
     case MaterialType::MIRROR: {
         float3 ndir = normalize(reflect(ray.directions[0], triangleNormal));
-        Ray reflectiveRay(i.location, ndir, true);
-        return ambient_light * m.color + (1 - ambient_light) * calcRayColor(reflectiveRay, ++depth);
+        Ray1 reflectiveRay(i.location, ndir, true);
+        i = getNearestIntersectionBVH(reflectiveRay);
+        return ambient_light * m.color + (1 - ambient_light) * calcRayColor(reflectiveRay, i, ++depth);
     }
 
     case MaterialType::DIELECTRIC: {
@@ -283,7 +289,7 @@ float3 RenderCore::calcRayColor(Ray ray, uint depth) {
 
         // Calculate reflective ray
         float3 reflectDir = reflect(ray.directions[0], triangleNormal);
-        Ray reflectiveRay(i.location, normalize(reflectDir), true);
+        Ray1 reflectiveRay(i.location, normalize(reflectDir), true);
 
         // Are we going into glass, or out of it?
         bool entering = !backFacing;
@@ -297,20 +303,23 @@ float3 RenderCore::calcRayColor(Ray ray, uint depth) {
 
         if (sin2T > 1.0f) {
             // Total internal reflection
-            float3 reflectCol = calcRayColor(reflectiveRay, ++depth);
+            i = getNearestIntersectionBVH(reflectiveRay);
+            float3 reflectCol = calcRayColor(reflectiveRay, i, ++depth);
             return m.color * reflectCol;
         }
 
         // Calculate the refractive ray, and its color
         float3 refractDir = n * ray.directions[0] + (n * cosI - sqrtf(1.0f - sin2T)) * triangleNormal;
-        Ray refractiveRay(i.location, normalize(refractDir), true);
-        float3 refractCol = calcRayColor(refractiveRay, ++depth);
+        Ray1 refractiveRay(i.location, normalize(refractDir), true);
+        i = getNearestIntersectionBVH(refractiveRay);
+        float3 refractCol = calcRayColor(refractiveRay, i, ++depth);
 
         // Schlicks approximation to determine the amount of reflection vs refraction
         float R0 = powf((n1 - n2) / (n1 + n2), 2.0f);
         float Fr = R0 + (1.0f - R0) * powf((1.0f - cosI), 5.0f);
 
-        float3 reflectCol = calcRayColor(reflectiveRay, ++depth);
+        i = getNearestIntersectionBVH(reflectiveRay);
+        float3 reflectCol = calcRayColor(reflectiveRay, i, ++depth);
         return m.color * (Fr * reflectCol + (1.0f - Fr) * refractCol);
     }
     case MaterialType::LIGHT: {
@@ -450,8 +459,8 @@ Intersection RenderCore::getNearestIntersection(Ray &ray) {
     return i;
 }
 
-
-bool RenderCore::intersectNode(const Ray &ray, const Node &node, float &t) {
+template <size_t RaySize>
+bool RenderCore::intersectNode(const SIMD_Ray<RaySize> &ray, const Node &node, float &t) {
     float3 dir_frac = make_float3(0, 0, 0);
 
     dir_frac.x = 1.0f / ray.directions[0].x;
@@ -497,25 +506,13 @@ bool sortNodeIntersections(NodeIntersection a, NodeIntersection b) {
 }
 
 template <size_t RaySize>
-Intersection RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, const Node &node, Intersection &inter) {
+void RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, Node &node, array<Intersection, RaySize> &inters) {
     // print("Traversal: ", ++traverseBVHcount);
-    if (node.isLeaf()) {
-        // constexpr if (RaySize > 1) {
-            for (int i = node.first(); i < node.first() + node.count; i++) {
-                inter.intersections_count++;
-                float t = ray.calcIntersectDist(BVH::primitives[BVH::indices[i]]);
-                if (t < inter.distance && t > 0) {
-                    inter.distance = t;
-                    inter.triangle = &BVH::primitives[BVH::indices[i]];
-                    inter.location = ray.origins[0] + ray.directions[0] * inter.distance;
-                }
-            }
-        // } else {
-        //     node
-        // }
-    } else /* if the node is not a leaf */ {
+    //  {
+    //     return node
+    if (!node.isLeaf()) {
         if (bvh4) {
-            inter.intersections_count++;
+            inters[0].intersections_count++;
 
             int childCount = node.childCount();
             vector<float> t(childCount, numeric_limits<float>::max());
@@ -530,12 +527,12 @@ Intersection RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, const Node &n
             sort(intersections.begin(), intersections.end(), sortNodeIntersections);
 
 			for (NodeIntersection i : intersections) { 
-				traverseBVH(ray, BVH::nodes[i.nodeIndex], inter);
+				traverseBVH(ray, BVH::nodes[i.nodeIndex], inters);
 			}
 
         } else {
             //print("bvh2");
-            inter.intersections_count++;
+            inters[0].intersections_count++;
             float t_left = numeric_limits<float>::max();
             float t_right = numeric_limits<float>::max();
 
@@ -544,31 +541,51 @@ Intersection RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, const Node &n
 
             if (intersects_left && intersects_right) {
                 if (t_left < t_right) {
-                    traverseBVH(ray, BVH::nodes[node.left()], inter);
-                    traverseBVH(ray, BVH::nodes[node.right()], inter);
+                    traverseBVH(ray, BVH::nodes[node.left()], inters);
+                    traverseBVH(ray, BVH::nodes[node.right()], inters);
                 } else {
-                    traverseBVH(ray, BVH::nodes[node.right()], inter);
-                    traverseBVH(ray, BVH::nodes[node.left()], inter);
+                    traverseBVH(ray, BVH::nodes[node.right()], inters);
+                    traverseBVH(ray, BVH::nodes[node.left()], inters);
                 }
             } else if (intersects_left) {
-                traverseBVH(ray, BVH::nodes[node.left()], inter);
+                traverseBVH(ray, BVH::nodes[node.left()], inters);
             } else if (intersects_right) {
-                traverseBVH(ray, BVH::nodes[node.right()], inter);
+                traverseBVH(ray, BVH::nodes[node.right()], inters);
+            }
+        }
+    } else {
+        for (auto &inter : inters) {
+            for (int i = node.first(); i < node.first() + node.count; i++) {
+                inter.intersections_count++;
+                float t = ray.calcIntersectDist(BVH::primitives[BVH::indices[i]]);
+                if (t < inter.distance && t > 0) {
+                    inter.distance = t;
+                    inter.triangle = &BVH::primitives[BVH::indices[i]];
+                    inter.location = ray.origins[0] + ray.directions[0] * inter.distance;
+                }
             }
         }
     }
-
-    return inter;
 }
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::getNearestIntersectionBVH                                        |
 //  |  Get the nearest intersection with a primitive for the given ray.		LH2'19|
 //  +-----------------------------------------------------------------------------+
-Intersection RenderCore::getNearestIntersectionBVH(Ray &ray) {
-    auto i = Intersection();
-    return traverseBVH(ray, *bvh.root, i);
+
+template <size_t RaySize>
+Intersection RenderCore::getNearestIntersectionBVH(SIMD_Ray<RaySize> &ray) {
+    array<Intersection, RaySize> inters;
+    auto root = Node(*bvh.root);
+    traverseBVH(ray, root, inters);
+    return inters[0];
 }
+
+void RenderCore::getNearestIntersectionsBVH(Ray &ray, array<Intersection, Ray::size> &inters) {
+    auto root = Node(*bvh.root);
+    traverseBVH(ray, root, inters);
+}
+
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::existNearerIntersection                                        |

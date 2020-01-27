@@ -166,10 +166,11 @@ public:
     // internal methods
 private:
     Intersection getNearestIntersection(Ray &ray);
-    Intersection getNearestIntersectionBVH(Ray &ray);
-    template <size_t RaySize> Intersection traverseBVH(const SIMD_Ray<RaySize> &ray, const Node &node, Intersection &inter);
-    bool intersectNode(const Ray &ray, const Node &node, float &t);
-    float3 calcRayColor(Ray ray, uint depth);
+    template <size_t RaySize> Intersection getNearestIntersectionBVH(SIMD_Ray<RaySize> &ray);
+    void getNearestIntersectionsBVH(Ray &ray, array<Intersection, Ray::size> &inters);
+    template <size_t RaySize> void traverseBVH(const SIMD_Ray<RaySize> &ray, Node &node, array<Intersection, RaySize> &inter);
+    template <size_t RaySize> bool intersectNode(const SIMD_Ray<RaySize> &ray, const Node &node, float &t);
+    float3 calcRayColor(Ray1 ray, Intersection &inter, uint depth);
     bool existNearerIntersection(Ray ray, float distance);
     float3 calcLightContributions(float3 mColor, float3 iPoint, float3 triangleN, float closestIntersection);
     void resetAccBuffer();
