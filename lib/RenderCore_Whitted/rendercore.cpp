@@ -518,19 +518,24 @@ Intersection RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, const Node &n
             inter.intersections_count++;
 
             int childCount = node.childCount();
-            vector<float> t(childCount, numeric_limits<float>::max());
-            vector<NodeIntersection> intersections;
+
+			float[childCount] t;
+            for (int i = 0; i < childCount;i++) { 
+				t[i] = numeric_limits<float>::max());
+			}
+
+            NodeIntersection[childCount] intersections;
+            int intersectCount = 0;
 
             for (int i = 0; i < childCount; i++) {
                 if (intersectNode(ray, BVH::nodes[node.left() + i], t[i])) {
-					intersections.push_back(NodeIntersection(node.left() + i, t[i]));
+					intersections[intersectCount++] = NodeIntersection(node.left() + i, t[i]);
 				}
-                // print("intersecting");
             }
-            sort(intersections.begin(), intersections.end(), sortNodeIntersections);
+            sort(intersections, intersections + intersectCount, sortNodeIntersections);
 
-			for (NodeIntersection i : intersections) { 
-				traverseBVH(ray, BVH::nodes[i.nodeIndex], inter);
+			for (int i = 0; i < intersectCount; i++) {
+				traverseBVH(ray, BVH::nodes[intersections[i].nodeIndex], inter);
 			}
 
         } else {
