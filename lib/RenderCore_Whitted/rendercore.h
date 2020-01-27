@@ -37,12 +37,12 @@ public:
     MaterialType type;
 };
 
-class Ray {
+class Ray_original {
 public:
     float3 origin;
     float3 direction;
 
-    Ray(float3 _origin, float3 _direction, bool offset = false) {
+    Ray_original(float3 _origin, float3 _direction, bool offset = false) {
         origin = _origin;
         direction = _direction;
         if (offset) { origin += direction * EPSILON; }
@@ -76,6 +76,7 @@ public:
 
 template <size_t Size>
 struct SIMD_Ray {
+    constexpr static auto size = Size;
     array<float3, Size> origins;
     array<float3, Size> directions;
     SIMD_Ray (const array<float3, Size> &origins,
@@ -85,6 +86,12 @@ struct SIMD_Ray {
             for (size_t i = 0; i < Size; i++)
                 origins[i] += directions[i] * EPSILON;
     }
+    SIMD_Ray (float3 origin, float3 direction, bool offset = false) {
+        origins[0] = origin;
+        directions[0] = direction;
+        if (offset) { origins[0] += direction * EPSILON; }
+    }
+    SIMD_Ray() = default;
 
     float calcIntersectDist(const CoreTri &tri, const size_t i = 0) const {
         float3 v0v1 = tri.vertex1 - tri.vertex0;
@@ -109,6 +116,14 @@ struct SIMD_Ray {
         return t;
     }
 };
+
+using Ray1  = SIMD_Ray<1>;
+using Ray2  = SIMD_Ray<2>;
+using Ray4  = SIMD_Ray<4>;
+using Ray8  = SIMD_Ray<8>;
+using Ray16 = SIMD_Ray<16>;
+
+using Ray   = SIMD_Ray<4>;
 
 //  +-----------------------------------------------------------------------------+
 //  |  Mesh                                                                       |

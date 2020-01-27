@@ -17,7 +17,7 @@
 #include "rendercore.h"
 
 constexpr bool bvh_visualization = false;
-constexpr bool bvh4 = true;
+constexpr bool bvh4 = false;
 
 using namespace lh2core;
 
@@ -85,8 +85,8 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
         print("Building BVH");
         bvh.constructBVH();
         print("Done BVH");
-        // if (bvh4)
-		// 	bvh.convertBVH4();
+        if (bvh4)
+			bvh.convertBVH4();
         // print("BVH size ", bvh.nodes.size());
         // for (auto &node : bvh.nodes) {
         //     if (node.isLeaf()) {
@@ -124,15 +124,20 @@ void RenderCore::Render(const ViewPyramid &view, const Convergence converge) {
             // if (plotPixel < noise_probability) {
             if (true) {
                 // Anti-aliasing: shoot the ray through a random position inside the pixel.
-                float v = (y + Rand(1)) / (float)screen->height;
-                float u = (x + Rand(1)) / (float)screen->width;
-                float3 direction = normalize(view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1) - view.pos);
+                Ray primaryRays;
+                for (int i = 0; i < primaryRays.size; i++) {
+                    float v = (y + Rand(1)) / (float)screen->height;
+                    float u = (x + Rand(1)) / (float)screen->width;
+                    float3 direction = normalize(view.p1 + u * (view.p2 - view.p1) + v * (view.p3 - view.p1) - view.pos);
+                    primaryRays.origins[i] = view.pos;
+                    primaryRays.directions[i] = direction;
+                }
 
-                Ray primaryRay(view.pos, direction);
+                // Ray primaryRay(view.pos, direction);
                 // Intersection i = getNearestIntersection(primaryRay); // duplicate nearest intersection?? Zie calcRayColor
 
                 // Calculate color and store in accumulator buffer.
-                float3 pixelColor = calcRayColor(primaryRay, 0);
+                float3 pixelColor = calcRayColor(primaryRays, 0);
                 accBuffer.at(size_t(y) * screen->width + x) += make_float4(pixelColor, 1.0f);
             }
         }
@@ -189,8 +194,8 @@ float3 RenderCore::calcRayColor(Ray ray, uint depth) {
     /* If we missed, get the skybox color. */
     if (i.distance >= numeric_limits<float>::max()) {
         // http://gl.ict.usc.edu/Data/HighResProbes/
-        float u = 1 + atan2f(ray.direction.x, -ray.direction.z) * INVPI;
-        float v = acosf(ray.direction.y) * INVPI;
+        float u = 1 + atan2f(ray.directions[0].x, -ray.directions[0].z) * INVPI;
+        float v = acosf(ray.directions[0].y) * INVPI;
 
         int xPixel = float(skyWidth) * 0.5 * u;
         int yPixel = float(skyHeight) * v;
@@ -207,13 +212,13 @@ float3 RenderCore::calcRayColor(Ray ray, uint depth) {
 
     // Are we facing the back of the triangle? If so, flip the normal.
     float3 triangleNormal = make_float3(i.triangle->Nx, i.triangle->Ny, i.triangle->Nz);
-    bool backFacing = dot(ray.direction, triangleNormal) > 0.0f;
+    bool backFacing = dot(ray.directions[0], triangleNormal) > 0.0f;
     if (backFacing) { triangleNormal *= -1; }
 
     // Switch depending on material type.
     switch (m.type) {
     case MaterialType::MIRROR: {
-        float3 ndir = normalize(reflect(ray.direction, triangleNormal));
+        float3 ndir = normalize(reflect(ray.directions[0], triangleNormal));
         Ray reflectiveRay(i.location, ndir, true);
         return ambient_light * m.color + (1 - ambient_light) * calcRayColor(reflectiveRay, ++depth);
     }
@@ -224,7 +229,7 @@ float3 RenderCore::calcRayColor(Ray ray, uint depth) {
         // also https://blog.demofox.org/2017/01/09/raytracing-reflection-refraction-fresnel-total-internal-reflection-and-beers-law/
 
         // Calculate reflective ray
-        float3 reflectDir = reflect(ray.direction, triangleNormal);
+        float3 reflectDir = reflect(ray.directions[0], triangleNormal);
         Ray reflectiveRay(i.location, normalize(reflectDir), true);
 
         // Are we going into glass, or out of it?
@@ -234,7 +239,7 @@ float3 RenderCore::calcRayColor(Ray ray, uint depth) {
         float n = n1 / n2;
 
         // Angle of ray with normal
-        float cosI = dot(-ray.direction, triangleNormal);
+        float cosI = dot(-ray.directions[0], triangleNormal);
         float sin2T = n * n * (1 - cosI * cosI);
 
         if (sin2T > 1.0f) {
@@ -244,7 +249,7 @@ float3 RenderCore::calcRayColor(Ray ray, uint depth) {
         }
 
         // Calculate the refractive ray, and its color
-        float3 refractDir = n * ray.direction + (n * cosI - sqrtf(1.0f - sin2T)) * triangleNormal;
+        float3 refractDir = n * ray.directions[0] + (n * cosI - sqrtf(1.0f - sin2T)) * triangleNormal;
         Ray refractiveRay(i.location, normalize(refractDir), true);
         float3 refractCol = calcRayColor(refractiveRay, ++depth);
 
@@ -385,7 +390,7 @@ Intersection RenderCore::getNearestIntersection(Ray &ray) {
             if (t < i.distance && t > 0) {
                 i.distance = t;
                 i.triangle = &mesh.triangles[triangleIdx];
-                i.location = ray.origin + ray.direction * i.distance;
+                i.location = ray.origins[0] + ray.directions[0] * i.distance;
             }
         }
     }
@@ -395,16 +400,16 @@ Intersection RenderCore::getNearestIntersection(Ray &ray) {
 bool RenderCore::intersectNode(const Ray &ray, const Node &node, float &t) {
     float3 dir_frac = make_float3(0, 0, 0);
 
-    dir_frac.x = 1.0f / ray.direction.x;
-    dir_frac.y = 1.0f / ray.direction.y;
-    dir_frac.z = 1.0f / ray.direction.z;
+    dir_frac.x = 1.0f / ray.directions[0].x;
+    dir_frac.y = 1.0f / ray.directions[0].y;
+    dir_frac.z = 1.0f / ray.directions[0].z;
 
-    float t1 = (node.bounds.minBounds.x - ray.origin.x) * dir_frac.x;
-    float t2 = (node.bounds.maxBounds.x - ray.origin.x) * dir_frac.x;
-    float t3 = (node.bounds.minBounds.y - ray.origin.y) * dir_frac.y;
-    float t4 = (node.bounds.maxBounds.y - ray.origin.y) * dir_frac.y;
-    float t5 = (node.bounds.minBounds.z - ray.origin.z) * dir_frac.z;
-    float t6 = (node.bounds.maxBounds.z - ray.origin.z) * dir_frac.z;
+    float t1 = (node.bounds.minBounds.x - ray.origins[0].x) * dir_frac.x;
+    float t2 = (node.bounds.maxBounds.x - ray.origins[0].x) * dir_frac.x;
+    float t3 = (node.bounds.minBounds.y - ray.origins[0].y) * dir_frac.y;
+    float t4 = (node.bounds.maxBounds.y - ray.origins[0].y) * dir_frac.y;
+    float t5 = (node.bounds.minBounds.z - ray.origins[0].z) * dir_frac.z;
+    float t6 = (node.bounds.maxBounds.z - ray.origins[0].z) * dir_frac.z;
 
     float t_min = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
     float t_max = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
@@ -434,7 +439,7 @@ Intersection RenderCore::traverseBVH(const Ray &ray, const Node &node, Intersect
             if (t < inter.distance && t > 0) {
                 inter.distance = t;
                 inter.triangle = &BVH::primitives[BVH::indices[i]];
-                inter.location = ray.origin + ray.direction * inter.distance;
+                inter.location = ray.origins[0] + ray.directions[0] * inter.distance;
             }
         }
     } else /* if the node is not a leaf */ {
