@@ -17,6 +17,7 @@
 
 #include "core_settings.h"
 #include "BVH.h"
+#include <array>
 
 namespace lh2core {
     

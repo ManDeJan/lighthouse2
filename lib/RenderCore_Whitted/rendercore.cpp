@@ -17,7 +17,7 @@
 #include "rendercore.h"
 
 constexpr bool bvh_visualization = false;
-constexpr bool bvh4 = false;
+constexpr bool bvh4 = true;
 
 using namespace lh2core;
 
@@ -515,20 +515,27 @@ void RenderCore::traverseBVH(const SIMD_Ray<RaySize> &ray, Node &node, array<Int
             inters[0].intersections_count++;
 
             int childCount = node.childCount();
-            vector<float> t(childCount, numeric_limits<float>::max());
-            vector<NodeIntersection> intersections;
+
+            float t[4];
+            for (int i = 0; i < 4; i++) { t[i] = numeric_limits<float>::max(); }
+
+            NodeIntersection intersections[4];
+            int intersectCount = 0;
 
             for (int i = 0; i < childCount; i++) {
-                if (intersectNode(ray, BVH::nodes[node.left() + i], t[i]))
-
-                intersections.push_back(NodeIntersection(node.left() + i, t[i]));
-                // print("intersecting");
+                if (intersectNode(ray, BVH::nodes[node.left() + i], t[i])) {
+                    intersections[intersectCount++] = NodeIntersection(node.left() + i, t[i]);
+                }
             }
-            sort(intersections.begin(), intersections.end(), sortNodeIntersections);
+            sort(intersections, intersections + intersectCount, sortNodeIntersections);
 
-			for (NodeIntersection i : intersections) { 
-				traverseBVH(ray, BVH::nodes[i.nodeIndex], inters);
-			}
+            for (int i = 0; i < intersectCount; i++) {
+                traverseBVH(ray, BVH::nodes[intersections[i].nodeIndex], inters);
+            }
+
+			// for (NodeIntersection i : intersections) { 
+			// 	traverseBVH(ray, BVH::nodes[i.nodeIndex], inters);
+			// }
 
         } else {
             //print("bvh2");
